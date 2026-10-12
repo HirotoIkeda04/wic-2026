@@ -1,12 +1,12 @@
 /**
  * Landing-page animation.
  *
- * All layout maths runs in a fixed "stage" whose height is the small viewport
- * (100svh) so that mobile browsers collapsing their toolbars does not resize
- * the poster or re-typeset it mid-scroll. The stage is anchored to the bottom
- * of the canvas: when the viewport grows, the extra space appears above the
- * poster, where the dark background and the photo's top shade make it
- * unobtrusive, and the sponsor strip stays on the bottom edge.
+ * The poster always fills the viewport, like a normal fixed element. Mobile
+ * browsers change the viewport height a little when their toolbars collapse,
+ * so the expensive typesetting only re-runs for real changes (width, or a
+ * large height change such as rotation); the photo stage keeps its typeset
+ * height and the facts panel absorbs small differences in the dark fade
+ * below the photo (see --stage-h in index.astro).
  *
  * A full-screen WebGL fragment shader draws six "metaballs": one large circle
  * holding the poster (rendered as HTML and clipped to the circle) and five
@@ -19,8 +19,7 @@ const VERT = 'attribute vec2 p; void main(){ gl_Position = vec4(p, 0.0, 1.0); }'
 
 const FRAG = /* glsl */ `
 precision highp float;
-uniform vec2 uRes;         // canvas size (device px)
-uniform vec2 uFrame;       // stage size (device px), anchored to the bottom of the canvas
+uniform vec2 uRes;
 uniform float uK;          // how strongly neighbouring circles merge
 uniform vec3 uBalls[6];    // xy = centre, z = radius (units of the shorter screen side)
 uniform vec3 uBg;
@@ -49,7 +48,7 @@ vec3 ballImage(sampler2D t, vec2 c, vec2 ext, float a, vec2 p){
   return texture2D(t, st).rgb;
 }
 void main(){
-  vec2 uv = (gl_FragCoord.xy - 0.5 * uFrame) / min(uFrame.x, uFrame.y);
+  vec2 uv = (gl_FragCoord.xy - 0.5 * uRes) / min(uRes.x, uRes.y);
   float d = 1000.0, dmin = 1000.0;
   float di[6];
   for (int i = 0; i < 6; i++) {
@@ -60,7 +59,7 @@ void main(){
   // Nearest circle owns the pixel; weights blend where circles merge.
   float w[6]; float wsum = 0.0;
   for (int i = 0; i < 6; i++) { w[i] = exp(-(di[i] - dmin) / 0.025); wsum += w[i]; }
-  float px = 1.0 / min(uFrame.x, uFrame.y);
+  float px = 1.0 / min(uRes.x, uRes.y);
   float inside = smoothstep(px * 1.2, -px * 1.2, d);
   vec3 img = ballImage(uTex0, uCen0, uExt0, uAsp[0], uv) * uDim0 * w[0]
            + ballImage(uTex1, uBalls[1].xy, vec2(uBalls[1].z), uAsp[1], uv) * w[1]
@@ -121,7 +120,7 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
   gl.enableVertexAttribArray(loc);
   gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
   const U = {
-    res: gl.getUniformLocation(prog, 'uRes'), stage: gl.getUniformLocation(prog, 'uFrame'), k: gl.getUniformLocation(prog, 'uK'),
+    res: gl.getUniformLocation(prog, 'uRes'), k: gl.getUniformLocation(prog, 'uK'),
     balls: gl.getUniformLocation(prog, 'uBalls'), bg: gl.getUniformLocation(prog, 'uBg'),
     asp: gl.getUniformLocation(prog, 'uAsp'), ext0: gl.getUniformLocation(prog, 'uExt0'),
     cen0: gl.getUniformLocation(prog, 'uCen0'), dim0: gl.getUniformLocation(prog, 'uDim0'),
@@ -172,29 +171,29 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
   const data = new Float32Array(18);
   let current = 0;
 
-  // Stage = frozen layout size in CSS px. Height comes from a 100svh probe
-  // when the browser supports it, so it ignores the mobile address bar.
-  const probe = document.getElementById('svh');
-  const stage = { W: 0, H: 0, top: 0 };   // top = offset of the stage inside the viewport
-  let dpr = 1;
+  // Stage = current viewport in CSS px.
+  const stage = { W: 0, H: 0 };
   const resize = () => {
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const w = Math.round(canvas.clientWidth * dpr), h = Math.round(canvas.clientHeight * dpr);
     if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; gl.viewport(0, 0, w, h); }
-    const fw = canvas.clientWidth;
-    const fh = Math.min(canvas.clientHeight, probe?.clientHeight || Infinity);
-    if (fw !== stage.W || fh !== stage.H) { stage.W = fw; stage.H = fh; }
-    stage.top = Math.max(0, canvas.clientHeight - stage.H);
+    stage.W = canvas.clientWidth;
+    stage.H = canvas.clientHeight;
+    const ph = stage.H + 'px';
+    if (poster.style.height !== ph) poster.style.height = ph;
   };
 
-  // Poster typesetting: pick a base font size that fits the viewport.
+  // Poster typesetting: pick a base font size that fits the viewport. Re-run
+  // only for real changes; toolbar-sized height changes keep the typeset.
+  const typeset = { W: 0, H: 0 };
   let lastW = 0, lastH = 0;
   const layoutPoster = () => {
     const W = stage.W, H = stage.H;
-    if (W === lastW && H === lastH) return;
-    lastW = W; lastH = H;
+    if (W === lastW && Math.abs(H - lastH) < lastH * 0.2) return;
+    lastW = W; lastH = H; typeset.W = W; typeset.H = H;
     poster.style.width = W + 'px';
     poster.style.height = H + 'px';
+    pIn.style.setProperty('--stage-h', H + 'px');
     const wide = W > H * 1.05 && W >= 640;
     poster.classList.toggle('wide', wide);
     let b = Math.max(11, Math.min(wide ? Math.min(W / 62, H / 34) : Math.min(W / 22.5, H / 44), wide ? 19 : 24));
@@ -207,8 +206,21 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
       if (pIn.scrollHeight <= H + 1 || b <= 9) break;
       b *= 0.94;
     }
+    // Shrink the facts until their content fits the panel. Measured from the
+    // children's extents (not scrollHeight), which works whichever way the
+    // panel is justified.
+    const factsOverflow = () => {
+      const cs = getComputedStyle(pFacts);
+      const avail = pFacts.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      let top = Infinity, bottom = -Infinity;
+      for (const el of Array.from(pFacts.children)) {
+        const r = el.getBoundingClientRect();
+        top = Math.min(top, r.top); bottom = Math.max(bottom, r.bottom);
+      }
+      return bottom - top - avail;
+    };
     let ps = 1;
-    while (ps > 0.76 && pFacts.scrollHeight > pFacts.clientHeight + 1) { ps -= 0.03; pIn.style.setProperty('--ps', ps.toFixed(2)); }
+    while (ps > 0.76 && factsOverflow() > 0.5) { ps -= 0.03; pIn.style.setProperty('--ps', ps.toFixed(2)); }
   };
   document.fonts?.ready.then(() => { lastW = 0; });
 
@@ -222,7 +234,7 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
     const ox = rcx - W * s / 2, oy = rcy - H * s / 2;
     const cx = (W / 2 + bx * unit - ox) / s, cy = (H / 2 - by * unit - oy) / s;
     const r = br * unit / s;
-    poster.style.transform = `translate(${ox.toFixed(2)}px,${(oy + stage.top).toFixed(2)}px) scale(${s.toFixed(5)})`;
+    poster.style.transform = `translate(${ox.toFixed(2)}px,${oy.toFixed(2)}px) scale(${s.toFixed(5)})`;
     poster.style.clipPath = `circle(${r.toFixed(2)}px at ${cx.toFixed(2)}px ${cy.toFixed(2)}px)`;
     poster.style.visibility = (by - br) * unit > H / 2 ? 'hidden' : 'visible';
 
@@ -243,7 +255,7 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
     const finalCx = W / 2 - finalShift * finalScale * unit, finalR = RADII[0]! * finalScale * unit;
     let off = Math.min(finalR * 0.3, (W - 16 - hlNeed) - finalCx);
     off = Math.max(off, finalR * 0.05);
-    heroLabel.style.transform = `translate(${(pcx + off).toFixed(1)}px,${(pcy + stage.top - heroLabel.offsetHeight / 2).toFixed(1)}px)`;
+    heroLabel.style.transform = `translate(${(pcx + off).toFixed(1)}px,${(pcy - heroLabel.offsetHeight / 2).toFixed(1)}px)`;
 
     // Dim the poster slightly as we zoom out so it matches the photo circles.
     const zp = 1 - Math.log(zoom) / Math.log(3.8);
@@ -258,7 +270,7 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
 
   const targetProgress = () => {
     const el = document.scrollingElement || document.documentElement;
-    const max = trackEl.offsetHeight - stage.H;
+    const max = trackEl.offsetHeight - (typeset.H || stage.H);   // typeset height keeps this stable while toolbars move
     return max > 0 ? clamp01(el.scrollTop / max) : 0;
   };
 
@@ -309,14 +321,13 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
       if (i === 1) secFontPx = Math.max(22, rpx * 0.5);
       title.style.opacity = note.style.opacity;
       const gap = 10, tH = title.offsetHeight, nH = note.offsetHeight;
-      const top = ny + stage.top - (tH + gap + nH) / 2;
+      const top = ny - (tH + gap + nH) / 2;
       title.style.transform = `translate(${nx.toFixed(1)}px,${top.toFixed(1)}px)`;
       note.style.transform = `translate(${nx.toFixed(1)}px,${(top + tH + gap).toFixed(1)}px)`;
     }
 
     const bg = bgOf();
     gl.uniform2f(U.res, canvas.width, canvas.height);
-    gl.uniform2f(U.stage, stage.W * dpr, stage.H * dpr);
     gl.uniform1f(U.k, STICKY * scale);
     gl.uniform3fv(U.balls, data);
     gl.uniform3f(U.bg, bg[0]!, bg[1]!, bg[2]!);
