@@ -25,16 +25,12 @@ const { slug, title, lead, description = lead } = Astro.props;
 </Base>
 
 <script>
-  // Detail pages always open at the top. The landing page passes its scroll
-  // position as ?y=, which we forward to every internal link so "Back"
-  // returns to the same spot in the animation.
+  // Detail pages open at the top (no browser scroll restoration). The landing
+  // page passes its position as ?y=, which we forward to every internal link
+  // so "Back" returns to the same spot in the animation. No scrollTo on
+  // `load`: images can arrive after the reader has started scrolling.
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-  const t0 = performance.now();
-  (function hold() {
-    if (window.scrollY > 2) window.scrollTo(0, 0);
-    if (performance.now() - t0 < 700) requestAnimationFrame(hold);
-  })();
-  window.addEventListener('load', () => window.scrollTo(0, 0));
+  window.scrollTo(0, 0);
   const m = /[?&]y=(\d+)/.exec(location.search);
   if (m) {
     document.querySelectorAll<HTMLAnchorElement>('a[href^="/"]').forEach((a) => { a.href = a.getAttribute('href')!.split('?')[0] + '?y=' + m[1]; });

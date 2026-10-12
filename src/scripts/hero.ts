@@ -355,15 +355,25 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
   };
 
   // Scroll position hand-off with the detail pages via ?y=.
+  // Only when returning with ?y= do we restore a position, and we stop the
+  // moment the user interacts. There is deliberately no scrollTo on `load`:
+  // on a phone the images arrive late, so a load-time scrollTo would yank the
+  // page back to the top mid-animation.
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
   const m = /[?&]y=(\d+)/.exec(location.search);
   const y = m ? Number(m[1]) : 0;
-  const t0 = performance.now();
-  (function hold() {
-    if (Math.abs(window.scrollY - y) > 2) { window.scrollTo(0, y); current = targetProgress(); }
-    if (performance.now() - t0 < 700) requestAnimationFrame(hold);
-  })();
-  window.addEventListener('load', () => { window.scrollTo(0, y); current = targetProgress(); });
+  if (y > 0) {
+    let interacted = false;
+    for (const ev of ['touchstart', 'wheel', 'keydown', 'pointerdown'] as const) {
+      window.addEventListener(ev, () => { interacted = true; }, { once: true, passive: true });
+    }
+    const t0 = performance.now();
+    (function hold() {
+      if (interacted) return;
+      if (Math.abs(window.scrollY - y) > 2) { window.scrollTo(0, y); current = targetProgress(); }
+      if (performance.now() - t0 < 700) requestAnimationFrame(hold);
+    })();
+  }
   if (m) { try { history.replaceState(null, '', location.pathname); } catch {} }
   document.addEventListener('click', (e) => {
     const a = (e.target as HTMLElement).closest?.('a[href^="/"]') as HTMLAnchorElement | null;
