@@ -1,11 +1,10 @@
 /**
  * Landing-page animation.
  *
- * All layout maths runs in a fixed "stage" (frame) whose height is the small
- * viewport (100svh) so that mobile browsers hiding and showing their address
- * bar does not resize the poster or re-typeset it mid-scroll. The canvas
- * itself always fills the real viewport; any extra height below the stage
- * just shows more background.
+ * The page itself never scrolls: wheel, touch and keyboard input move a
+ * virtual scroll position that drives the timeline. That keeps mobile
+ * browser chrome (the address bar) from collapsing mid-animation, which
+ * would otherwise resize the viewport and re-typeset the poster.
  *
  * A full-screen WebGL fragment shader draws six "metaballs": one large circle
  * holding the poster (rendered as HTML and clipped to the circle) and five
@@ -18,8 +17,7 @@ const VERT = 'attribute vec2 p; void main(){ gl_Position = vec4(p, 0.0, 1.0); }'
 
 const FRAG = /* glsl */ `
 precision highp float;
-uniform vec2 uRes;         // canvas size (device px)
-uniform vec2 uFrame;       // stage size (device px), anchored to the top of the canvas
+uniform vec2 uRes;
 uniform float uK;          // how strongly neighbouring circles merge
 uniform vec3 uBalls[6];    // xy = centre, z = radius (units of the shorter screen side)
 uniform vec3 uBg;
@@ -48,7 +46,7 @@ vec3 ballImage(sampler2D t, vec2 c, vec2 ext, float a, vec2 p){
   return texture2D(t, st).rgb;
 }
 void main(){
-  vec2 uv = (gl_FragCoord.xy - vec2(0.5 * uFrame.x, uRes.y - 0.5 * uFrame.y)) / min(uFrame.x, uFrame.y);
+  vec2 uv = (gl_FragCoord.xy - 0.5 * uRes) / min(uRes.x, uRes.y);
   float d = 1000.0, dmin = 1000.0;
   float di[6];
   for (int i = 0; i < 6; i++) {
@@ -59,7 +57,7 @@ void main(){
   // Nearest circle owns the pixel; weights blend where circles merge.
   float w[6]; float wsum = 0.0;
   for (int i = 0; i < 6; i++) { w[i] = exp(-(di[i] - dmin) / 0.025); wsum += w[i]; }
-  float px = 1.0 / min(uFrame.x, uFrame.y);
+  float px = 1.0 / min(uRes.x, uRes.y);
   float inside = smoothstep(px * 1.2, -px * 1.2, d);
   vec3 img = ballImage(uTex0, uCen0, uExt0, uAsp[0], uv) * uDim0 * w[0]
            + ballImage(uTex1, uBalls[1].xy, vec2(uBalls[1].z), uAsp[1], uv) * w[1]
@@ -94,7 +92,7 @@ const bgOf = () => {
   return [(n >> 16) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
 };
 
-export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
+export function startHero(canvas: HTMLCanvasElement, photos: string[]): { scrollTo(y: number): void } | undefined {
   const errorEl = document.getElementById('error')!;
   const gl = canvas.getContext('webgl', { antialias: false });
   if (!gl) { errorEl.style.display = 'grid'; return; }
@@ -120,7 +118,7 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
   gl.enableVertexAttribArray(loc);
   gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
   const U = {
-    res: gl.getUniformLocation(prog, 'uRes'), stage: gl.getUniformLocation(prog, 'uFrame'), k: gl.getUniformLocation(prog, 'uK'),
+    res: gl.getUniformLocation(prog, 'uRes'), k: gl.getUniformLocation(prog, 'uK'),
     balls: gl.getUniformLocation(prog, 'uBalls'), bg: gl.getUniformLocation(prog, 'uBg'),
     asp: gl.getUniformLocation(prog, 'uAsp'), ext0: gl.getUniformLocation(prog, 'uExt0'),
     cen0: gl.getUniformLocation(prog, 'uCen0'), dim0: gl.getUniformLocation(prog, 'uDim0'),
@@ -162,7 +160,6 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
   const pFacts = pIn.querySelector<HTMLElement>('.p-facts')!;
   const heroLabel = document.getElementById('heroLabel')!;
   const heroH2 = heroLabel.querySelector('h2')!;
-  const trackEl = document.querySelector<HTMLElement>('.track')!;
   const secs = Array.from(document.querySelectorAll<HTMLElement>('#sections .sec'));
   const titles = secs.map((s) => s.querySelector<HTMLElement>('.title')!);
   const notes = secs.map((s) => s.querySelector<HTMLElement>('.note')!);
@@ -171,23 +168,14 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
   const data = new Float32Array(18);
   let current = 0;
 
-  // Stage = frozen layout size in CSS px. Height comes from a 100svh probe
-  // when the browser supports it, so it ignores the mobile address bar.
-  const probe = document.getElementById('svh');
+  // Stage = layout size in CSS px (the canvas fills the viewport).
   const stage = { W: 0, H: 0 };
-  let dpr = 1;
   const resize = () => {
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const w = Math.round(canvas.clientWidth * dpr), h = Math.round(canvas.clientHeight * dpr);
     if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; gl.viewport(0, 0, w, h); }
-    const fw = canvas.clientWidth;
-    const fh = Math.min(canvas.clientHeight, probe?.clientHeight || Infinity);
-    if (fw !== stage.W || fh !== stage.H) { stage.W = fw; stage.H = fh; }
-    // The poster element itself follows the real viewport so its bottom strip
-    // stays glued to the screen edge; the photo and type stay at stage size and
-    // the facts panel absorbs the difference (see --stage-h in index.astro).
-    const ph = canvas.clientHeight + 'px';
-    if (poster.style.height !== ph) poster.style.height = ph;
+    stage.W = canvas.clientWidth;
+    stage.H = canvas.clientHeight;
   };
 
   // Poster typesetting: pick a base font size that fits the viewport.
@@ -197,8 +185,7 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
     if (W === lastW && H === lastH) return;
     lastW = W; lastH = H;
     poster.style.width = W + 'px';
-    poster.style.height = H + 'px';          // typeset against the stage, restored below
-    pIn.style.setProperty('--stage-h', H + 'px');
+    poster.style.height = H + 'px';
     const wide = W > H * 1.05 && W >= 640;
     poster.classList.toggle('wide', wide);
     let b = Math.max(11, Math.min(wide ? Math.min(W / 62, H / 34) : Math.min(W / 22.5, H / 44), wide ? 19 : 24));
@@ -213,7 +200,6 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
     }
     let ps = 1;
     while (ps > 0.76 && pFacts.scrollHeight > pFacts.clientHeight + 1) { ps -= 0.03; pIn.style.setProperty('--ps', ps.toFixed(2)); }
-    poster.style.height = canvas.clientHeight + 'px';
   };
   document.fonts?.ready.then(() => { lastW = 0; });
 
@@ -261,15 +247,62 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
     poster.classList.toggle('live', zoom > 3.3);   // buttons only clickable when nearly full-screen
   };
 
-  const targetProgress = () => {
-    const el = document.scrollingElement || document.documentElement;
-    const max = trackEl.offsetHeight - stage.H;
-    return max > 0 ? clamp01(el.scrollTop / max) : 0;
-  };
+  // ---- virtual scroll ------------------------------------------------------
+  // `virtualY` plays the role of scrollTop; the full timeline is TRACK_VH
+  // viewport-heights long, exactly as the original page-scroll version.
+  let virtualY = 0;
+  let velocity = 0;          // px per ms, for touch fling
+  const maxY = () => (TRACK_VH / 100) * stage.H;
+  const moveBy = (dy: number) => { virtualY = Math.min(Math.max(virtualY + dy, 0), maxY()); };
+  const targetProgress = () => (maxY() > 0 ? clamp01(virtualY / maxY()) : 0);
+  const inMenu = (t: EventTarget | null) => !!(t as Element | null)?.closest?.('#nav');
 
+  window.addEventListener('wheel', (e) => {
+    if (inMenu(e.target)) return;
+    e.preventDefault();
+    const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? stage.H : 1;
+    velocity = 0;
+    moveBy(e.deltaY * unit);
+  }, { passive: false });
+
+  let touchY = 0, touchT = 0;
+  window.addEventListener('touchstart', (e) => {
+    if (inMenu(e.target)) return;
+    touchY = e.touches[0]!.clientY; touchT = e.timeStamp; velocity = 0;
+  }, { passive: true });
+  window.addEventListener('touchmove', (e) => {
+    if (inMenu(e.target)) return;
+    e.preventDefault();
+    const y = e.touches[0]!.clientY, dt = Math.max(1, e.timeStamp - touchT);
+    const dy = touchY - y;
+    moveBy(dy);
+    velocity = dy / dt;
+    touchY = y; touchT = e.timeStamp;
+  }, { passive: false });
+  window.addEventListener('touchend', (e) => {
+    if (inMenu(e.target)) return;
+    if (e.timeStamp - touchT > 80) velocity = 0;   // finger stopped before lifting
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (inMenu(e.target) || (e.target as HTMLElement).tagName === 'INPUT') return;
+    const step = { ArrowDown: 60, ArrowUp: -60, PageDown: stage.H * 0.8, PageUp: -stage.H * 0.8, ' ': e.shiftKey ? -stage.H * 0.8 : stage.H * 0.8 }[e.key];
+    if (step !== undefined) { e.preventDefault(); velocity = 0; moveBy(step); }
+    else if (e.key === 'Home') { e.preventDefault(); virtualY = 0; }
+    else if (e.key === 'End') { e.preventDefault(); virtualY = maxY(); }
+  });
+
+  let lastMs = 0;
   const frame = (ms: number) => {
     resize();
     const t = reduceMotion ? 0 : ms / 1000;
+    const dt = lastMs ? Math.min(ms - lastMs, 50) : 16;
+    lastMs = ms;
+    if (Math.abs(velocity) > 0.005) {          // touch fling with friction
+      moveBy(velocity * dt);
+      velocity *= Math.pow(0.94, dt / 16);
+      if (virtualY <= 0 || virtualY >= maxY()) velocity = 0;
+    }
     current += (targetProgress() - current) * 0.08;
 
     const pos = current * TRACK_VH;
@@ -321,7 +354,6 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
 
     const bg = bgOf();
     gl.uniform2f(U.res, canvas.width, canvas.height);
-    gl.uniform2f(U.stage, stage.W * dpr, stage.H * dpr);
     gl.uniform1f(U.k, STICKY * scale);
     gl.uniform3fv(U.balls, data);
     gl.uniform3f(U.bg, bg[0]!, bg[1]!, bg[2]!);
@@ -348,22 +380,20 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
     requestAnimationFrame(frame);
   };
 
-  // Scroll position hand-off with the detail pages via ?y=.
-  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  // Position hand-off with the detail pages via ?y= (virtual scroll px).
   const m = /[?&]y=(\d+)/.exec(location.search);
-  const y = m ? Number(m[1]) : 0;
-  const t0 = performance.now();
-  (function hold() {
-    if (Math.abs(window.scrollY - y) > 2) { window.scrollTo(0, y); current = targetProgress(); }
-    if (performance.now() - t0 < 700) requestAnimationFrame(hold);
-  })();
-  window.addEventListener('load', () => { window.scrollTo(0, y); current = targetProgress(); });
-  if (m) { try { history.replaceState(null, '', location.pathname); } catch {} }
+  if (m) {
+    resize();
+    virtualY = Math.min(Number(m[1]), maxY());
+    current = targetProgress();
+    try { history.replaceState(null, '', location.pathname); } catch {}
+  }
   document.addEventListener('click', (e) => {
     const a = (e.target as HTMLElement).closest?.('a[href^="/"]') as HTMLAnchorElement | null;
-    if (a && a.getAttribute('href') !== '/') a.href = a.getAttribute('href') + '?y=' + Math.round(window.scrollY);
+    const href = a?.getAttribute('href')?.split('?')[0];
+    if (a && href && href !== '/') a.href = href + '?y=' + Math.round(virtualY);
   });
-  window.addEventListener('pageshow', (e) => { if (e.persisted) current = targetProgress(); });
 
   requestAnimationFrame(frame);
+  return { scrollTo(y) { velocity = 0; virtualY = Math.min(Math.max(y, 0), maxY()); } };
 }

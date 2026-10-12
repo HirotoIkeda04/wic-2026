@@ -55,8 +55,6 @@ const moreClass = 'pointer-events-auto mt-[0.9em] inline-flex items-center gap-2
   </Fragment>
 
   <canvas id="gl" class="fixed inset-0 block h-full w-full" data-photos={JSON.stringify(photos)}></canvas>
-  <!-- Measures 100svh so the animation ignores the mobile address bar -->
-  <div id="svh" class="invisible fixed left-0 top-0 h-svh w-px" aria-hidden="true"></div>
 
   <!-- Poster: HTML content clipped to the big circle by the animation -->
   <section class="poster" id="poster" aria-label="World Investment Competition 2026">
@@ -93,9 +91,6 @@ const moreClass = 'pointer-events-auto mt-[0.9em] inline-flex items-center gap-2
       </div>
     </div>
   </section>
-
-  <!-- Only exists to give the page scroll height for the animation -->
-  <div class="track h-[509.4vh]"></div>
 
   <!-- Heading beside the big circle after zoom-out -->
   <div class="hero-label pointer-events-none fixed left-0 top-0 z-20 text-paper opacity-0 will-change-[transform,opacity] [text-shadow:0_0_0.5em_rgb(0_0_0/0.6)]" id="heroLabel">
@@ -149,12 +144,18 @@ const moreClass = 'pointer-events-auto mt-[0.9em] inline-flex items-center gap-2
 <script>
   import { startHero } from '../scripts/hero';
   const canvas = document.getElementById('gl') as HTMLCanvasElement;
-  startHero(canvas, JSON.parse(canvas.dataset.photos ?? '[]'));
+  const hero = startHero(canvas, JSON.parse(canvas.dataset.photos ?? '[]'));
   document.querySelector('[data-brand]')?.addEventListener('click', (e) => {
     e.preventDefault();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    hero?.scrollTo(0);
   });
 </script>
+
+<style is:global>
+  /* The landing page never scrolls natively: input drives a virtual scroll
+     (see src/scripts/hero.ts), so the mobile address bar stays put. */
+  html, body { height: 100%; overflow: hidden; overscroll-behavior: none; touch-action: none; }
+</style>
 
 <style>
   /*
@@ -184,7 +185,7 @@ const moreClass = 'pointer-events-auto mt-[0.9em] inline-flex items-center gap-2
 
   /* Top half: photo with the (visually hidden) title */
   .p-stage {
-    position: relative; flex: 0 0 calc(var(--stage-h, 100%) * 0.5);   /* half the stage, not of the (possibly taller) poster */
+    position: relative; flex: 0 0 50%;
     display: flex; flex-direction: column; justify-content: space-between;
     padding: calc(env(safe-area-inset-top, 0px) + 3.6em) 1.6em 1.3em;
     overflow: hidden; background: #111;
