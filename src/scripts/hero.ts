@@ -2,11 +2,9 @@
  * Landing-page animation.
  *
  * The poster always fills the viewport, like a normal fixed element. Mobile
- * browsers change the viewport height a little when their toolbars collapse,
- * so the expensive typesetting only re-runs for real changes (width, or a
- * large height change such as rotation); the photo stage keeps its typeset
- * height and the facts panel absorbs small differences in the dark fade
- * below the photo (see --stage-h in index.astro).
+ * browsers change the viewport height when their toolbars collapse; the
+ * poster's halves follow that, while the expensive typesetting only re-runs
+ * when the width changes or the viewport gets lower than the typeset height.
  *
  * A full-screen WebGL fragment shader draws six "metaballs": one large circle
  * holding the poster (rendered as HTML and clipped to the circle) and five
@@ -187,17 +185,18 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
     if (poster.style.height !== ph) poster.style.height = ph;
   };
 
-  // Poster typesetting: pick a base font size that fits the viewport. Re-run
-  // only for real changes; toolbar-sized height changes keep the typeset.
+  // Poster typesetting: pick a base font size that fits the viewport. Type is
+  // set for the smallest height seen (toolbars visible) and kept when mobile
+  // toolbars collapse and the viewport grows; it is redone only when the
+  // width changes or the viewport gets lower than the typeset height.
   const typeset = { W: 0, H: 0 };
   let lastW = 0, lastH = 0;
   const layoutPoster = () => {
     const W = stage.W, H = stage.H;
-    if (W === lastW && Math.abs(H - lastH) < lastH * 0.2) return;
+    if (W === lastW && H >= lastH) return;
     lastW = W; lastH = H; typeset.W = W; typeset.H = H;
     poster.style.width = W + 'px';
     poster.style.height = H + 'px';
-    pIn.style.setProperty('--stage-h', H + 'px');
     const wide = W > H * 1.05 && W >= 640;
     poster.classList.toggle('wide', wide);
     let b = Math.max(11, Math.min(wide ? Math.min(W / 62, H / 34) : Math.min(W / 22.5, H / 44), wide ? 19 : 24));

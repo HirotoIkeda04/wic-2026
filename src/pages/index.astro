@@ -90,8 +90,6 @@ const moreClass = 'pointer-events-auto mt-[0.9em] inline-flex items-center gap-2
           <p class="p-by">{SITE.organizer}</p>
         </div>
       </div>
-      <!-- Grows when a mobile toolbar collapses, extending the white strip to the screen edge -->
-      <div class="p-fill" aria-hidden="true"></div>
     </div>
   </section>
 
@@ -185,8 +183,11 @@ const moreClass = 'pointer-events-auto mt-[0.9em] inline-flex items-center gap-2
   .p-in { position: relative; height: 100%; display: flex; flex-direction: column; font-size: var(--b, 16px); }
 
   /* Top half: photo with the (visually hidden) title */
+  /* The poster always fills the viewport: photo on the top half, facts on the
+     bottom half, sponsor strip on the bottom edge. When a mobile toolbar
+     collapses the halves simply grow; only the type is kept as typeset. */
   .p-stage {
-    position: relative; flex: 0 0 calc(var(--stage-h, 100%) * 0.5);   /* half of the typeset height, so toolbars don't resize the photo */
+    position: relative; flex: 0 0 50%;
     display: flex; flex-direction: column; justify-content: space-between;
     padding: calc(env(safe-area-inset-top, 0px) + 3.6em) 1.6em 1.3em;
     overflow: hidden; background: #111;
@@ -209,7 +210,7 @@ const moreClass = 'pointer-events-auto mt-[0.9em] inline-flex items-center gap-2
   .p-titles .p-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 
   /* Bottom half: key facts, set like a printed notice (white and grey only) */
-  .p-panel { flex: 0 0 calc(var(--stage-h, 100%) * 0.5); min-height: 0; display: flex; flex-direction: column; font-size: calc(var(--ps, 1) * 1em); background: var(--black); color: #f2f2f2; }
+  .p-panel { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; font-size: calc(var(--ps, 1) * 1em); background: var(--black); color: #f2f2f2; }
   .p-facts { flex: 1 1 0; min-height: 0; padding: 0.4em 1.6em 0.9em; display: flex; flex-direction: column; justify-content: space-between; gap: 0.6em; }
   .p-lead { margin: 0; font-size: 0.8em; line-height: 1.45; color: rgb(242 242 242 / 0.92); text-wrap: pretty; }
   .p-stats { display: grid; grid-template-columns: 1fr 1fr 1.25fr; column-gap: 0.8em; border-top: 1px solid rgb(242 242 242 / 0.16); padding: 0.75em 0; }
@@ -222,7 +223,6 @@ const moreClass = 'pointer-events-auto mt-[0.9em] inline-flex items-center gap-2
   .p-dv .s { display: block; font-size: 0.72em; color: rgb(242 242 242 / 0.6); margin-top: 0.2em; }
 
   /* White strip: sponsors and organizer. Not affected by the facts scale. */
-  .p-fill { flex: 1 1 0; background: #f6f5f2; }   /* same paper as the strip; zero height unless the viewport grew */
   .p-strip { background: #f6f5f2; color: #1d1b1b; font-size: var(--b, 16px); padding: 0.9em 1.6em calc(env(safe-area-inset-bottom, 0px) + 0.85em); }
   .p-spons { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); align-items: center; justify-items: center; gap: 0.7em 1em; }
   .p-spons li { min-width: 0; }
