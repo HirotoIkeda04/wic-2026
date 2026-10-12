@@ -183,16 +183,13 @@ const moreClass = 'pointer-events-auto mt-[0.9em] inline-flex items-center gap-2
   .p-in { position: relative; height: 100%; display: flex; flex-direction: column; font-size: var(--b, 16px); }
 
   /* Top half: photo with the (visually hidden) title */
-  /* The stage takes half of the typeset height; when a mobile toolbar collapses
-     and the poster grows, the stage absorbs the extra at its top, behind the
-     fixed header, and the photo stays anchored to the stage's bottom. */
   .p-stage {
-    position: relative; flex: 1 1 0; min-height: calc(var(--stage-h, 100%) * 0.5);
+    position: relative; flex: 0 0 calc(var(--stage-h, 100%) * 0.5);   /* half of the typeset height, so toolbars don't resize the photo */
     display: flex; flex-direction: column; justify-content: space-between;
     padding: calc(env(safe-area-inset-top, 0px) + 3.6em) 1.6em 1.3em;
     overflow: hidden; background: #111;
   }
-  .p-stage img { position: absolute; left: 0; bottom: calc(var(--stage-h, 100%) * -0.09); width: 100%; height: calc(var(--stage-h, 100%) * 0.59); object-fit: cover; object-position: 50% 0%; }   /* 118% of half the typeset height, floor pushed below the box */
+  .p-stage img { position: absolute; top: 0; left: 0; width: 100%; height: 118%; object-fit: cover; object-position: 50% 0%; }
   .p-stage::before {            /* shade so the header reads over the photo; fades to black at the bottom */
     content: ""; position: absolute; inset: 0; z-index: 1;
     background: linear-gradient(to bottom,
@@ -210,8 +207,8 @@ const moreClass = 'pointer-events-auto mt-[0.9em] inline-flex items-center gap-2
   .p-titles .p-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 
   /* Bottom half: key facts, set like a printed notice (white and grey only) */
-  .p-panel { flex: 0 0 calc(var(--stage-h, 100%) * 0.5); min-height: 0; display: flex; flex-direction: column; font-size: calc(var(--ps, 1) * 1em); background: var(--black); color: #f2f2f2; }
-  .p-facts { flex: 1 1 0; min-height: 0; padding: 0.4em 1.6em 0.9em; display: flex; flex-direction: column; justify-content: space-between; gap: 0.6em; }
+  .p-panel { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; font-size: calc(var(--ps, 1) * 1em); background: var(--black); color: #f2f2f2; }
+  .p-facts { flex: 1 1 0; min-height: 0; padding: 0.4em 1.6em 0.9em; display: flex; flex-direction: column; justify-content: flex-end; gap: 0.6em; }   /* spare height collects under the photo's fade */
   .p-lead { margin: 0; font-size: 0.8em; line-height: 1.45; color: rgb(242 242 242 / 0.92); text-wrap: pretty; }
   .p-stats { display: grid; grid-template-columns: 1fr 1fr 1.25fr; column-gap: 0.8em; border-top: 1px solid rgb(242 242 242 / 0.16); padding: 0.75em 0; }
   .p-stat .n { display: block; font-size: 1.55em; font-weight: 700; letter-spacing: -0.03em; line-height: 1.05; white-space: nowrap; }
@@ -238,7 +235,7 @@ const moreClass = 'pointer-events-auto mt-[0.9em] inline-flex items-center gap-2
   }
 
   /* Landscape viewports: same stacking, wider measure */
-  .poster.wide .p-stage img { height: calc(var(--stage-h, 100%) * 0.5); bottom: 0; object-position: 50% 62%; }
+  .poster.wide .p-stage img { height: 100%; object-position: 50% 62%; }
   .poster.wide .p-stage { padding: calc(env(safe-area-inset-top, 0px) + 4.2em) 2.6em 1.6em; }
   .poster.wide .p-facts { display: grid; grid-template-columns: 1.1fr 1.4fr; grid-template-rows: auto auto; column-gap: 3em; align-content: center; padding: 0.6em 2.6em 1em; }
   .poster.wide .p-lead { font-size: 0.95em; max-width: 24em; grid-row: 1 / span 2; align-self: center; }
