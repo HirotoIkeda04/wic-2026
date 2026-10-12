@@ -1,6 +1,12 @@
 /**
  * Landing-page animation.
  *
+ * All layout maths runs in a fixed "stage" (frame) whose height is the small
+ * viewport (100svh) so that mobile browsers hiding and showing their address
+ * bar does not resize the poster or re-typeset it mid-scroll. The canvas
+ * itself always fills the real viewport; any extra height below the stage
+ * just shows more background.
+ *
  * A full-screen WebGL fragment shader draws six "metaballs": one large circle
  * holding the poster (rendered as HTML and clipped to the circle) and five
  * smaller ones, each textured with a photo, lined up below it. Scrolling the
@@ -12,7 +18,8 @@ const VERT = 'attribute vec2 p; void main(){ gl_Position = vec4(p, 0.0, 1.0); }'
 
 const FRAG = /* glsl */ `
 precision highp float;
-uniform vec2 uRes;
+uniform vec2 uRes;         // canvas size (device px)
+uniform vec2 uFrame;       // stage size (device px), anchored to the top of the canvas
 uniform float uK;          // how strongly neighbouring circles merge
 uniform vec3 uBalls[6];    // xy = centre, z = radius (units of the shorter screen side)
 uniform vec3 uBg;
@@ -41,7 +48,7 @@ vec3 ballImage(sampler2D t, vec2 c, vec2 ext, float a, vec2 p){
   return texture2D(t, st).rgb;
 }
 void main(){
-  vec2 uv = (gl_FragCoord.xy - 0.5 * uRes) / min(uRes.x, uRes.y);
+  vec2 uv = (gl_FragCoord.xy - vec2(0.5 * uFrame.x, uRes.y - 0.5 * uFrame.y)) / min(uFrame.x, uFrame.y);
   float d = 1000.0, dmin = 1000.0;
   float di[6];
   for (int i = 0; i < 6; i++) {
@@ -52,7 +59,7 @@ void main(){
   // Nearest circle owns the pixel; weights blend where circles merge.
   float w[6]; float wsum = 0.0;
   for (int i = 0; i < 6; i++) { w[i] = exp(-(di[i] - dmin) / 0.025); wsum += w[i]; }
-  float px = 1.0 / min(uRes.x, uRes.y);
+  float px = 1.0 / min(uFrame.x, uFrame.y);
   float inside = smoothstep(px * 1.2, -px * 1.2, d);
   vec3 img = ballImage(uTex0, uCen0, uExt0, uAsp[0], uv) * uDim0 * w[0]
            + ballImage(uTex1, uBalls[1].xy, vec2(uBalls[1].z), uAsp[1], uv) * w[1]
@@ -113,7 +120,7 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
   gl.enableVertexAttribArray(loc);
   gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
   const U = {
-    res: gl.getUniformLocation(prog, 'uRes'), k: gl.getUniformLocation(prog, 'uK'),
+    res: gl.getUniformLocation(prog, 'uRes'), stage: gl.getUniformLocation(prog, 'uFrame'), k: gl.getUniformLocation(prog, 'uK'),
     balls: gl.getUniformLocation(prog, 'uBalls'), bg: gl.getUniformLocation(prog, 'uBg'),
     asp: gl.getUniformLocation(prog, 'uAsp'), ext0: gl.getUniformLocation(prog, 'uExt0'),
     cen0: gl.getUniformLocation(prog, 'uCen0'), dim0: gl.getUniformLocation(prog, 'uDim0'),
@@ -164,16 +171,24 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
   const data = new Float32Array(18);
   let current = 0;
 
+  // Stage = frozen layout size in CSS px. Height comes from a 100svh probe
+  // when the browser supports it, so it ignores the mobile address bar.
+  const probe = document.getElementById('svh');
+  const stage = { W: 0, H: 0 };
+  let dpr = 1;
   const resize = () => {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
     const w = Math.round(canvas.clientWidth * dpr), h = Math.round(canvas.clientHeight * dpr);
     if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; gl.viewport(0, 0, w, h); }
+    const fw = canvas.clientWidth;
+    const fh = Math.min(canvas.clientHeight, probe?.clientHeight || Infinity);
+    if (fw !== stage.W || fh !== stage.H) { stage.W = fw; stage.H = fh; }
   };
 
   // Poster typesetting: pick a base font size that fits the viewport.
   let lastW = 0, lastH = 0;
   const layoutPoster = () => {
-    const W = canvas.clientWidth, H = canvas.clientHeight;
+    const W = stage.W, H = stage.H;
     if (W === lastW && H === lastH) return;
     lastW = W; lastH = H;
     poster.style.width = W + 'px';
@@ -198,7 +213,7 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
   // Scale the poster to the visible part of the big circle and clip it.
   let hlKey = '', secFontPx = 26, hlNeed = 200;
   const placePoster = (rect: number[], bx: number, by: number, br: number, unit: number, zoom: number, shiftT: number, finalShift: number, finalScale: number) => {
-    const W = canvas.clientWidth, H = canvas.clientHeight;
+    const W = stage.W, H = stage.H;
     const rcx = W / 2 + rect[0]! * unit, rcy = H / 2 - rect[1]! * unit;
     const rw = 2 * rect[2]! * unit, rh = 2 * rect[3]! * unit;
     const s = Math.max(rw / W, rh / H);
@@ -241,7 +256,7 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
 
   const targetProgress = () => {
     const el = document.scrollingElement || document.documentElement;
-    const max = trackEl.offsetHeight - window.innerHeight;
+    const max = trackEl.offsetHeight - stage.H;
     return max > 0 ? clamp01(el.scrollTop / max) : 0;
   };
 
@@ -253,17 +268,17 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
     const pos = current * TRACK_VH;
     const zoom = Math.pow(3.8, 1 - smooth(Math.min(pos / ZOOM_END, 1)));
     const shiftT = smooth(clamp01((pos - (ALIGN - 8)) / 68));
-    const portrait = canvas.clientWidth < canvas.clientHeight;
+    const portrait = stage.W < stage.H;
     const rowShrink = portrait ? 0.82 : 1;
     const shift = portrait ? 0.5 - RADII[1]! * rowShrink : 0.22;
     const flow = clamp01((pos - ALIGN - ALIGN_LEN) / FLOW_LEN);
     const cu = clamp01((pos - ALIGN) / ALIGN_LEN);
     const vEnd = 2.26 / FLOW_LEN * ALIGN_LEN;
     const camY = smooth(cu) * 1.16 + (cu * cu * cu - cu * cu) * vEnd + 2.26 * flow;
-    const halfH = 0.5 * canvas.height / Math.min(canvas.width, canvas.height);
+    const halfH = 0.5 * stage.H / Math.min(stage.W, stage.H);
     const baseScale = Math.min(1, halfH / 0.8);
     const scale = baseScale * zoom;
-    const unit = Math.min(canvas.clientWidth, canvas.clientHeight);
+    const unit = Math.min(stage.W, stage.H);
 
     for (let i = 0; i < 6; i++) {
       // Column: poster at the origin, small circles stacked below it.
@@ -276,15 +291,15 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
       if (i === 0) continue;
 
       // Heading + blurb to the right of each small circle.
-      const nx = canvas.clientWidth / 2 + data[i * 3]! * unit + data[i * 3 + 2]! * unit + 0.045 * scale * unit;
-      const ny = canvas.clientHeight / 2 - data[i * 3 + 1]! * unit;
+      const nx = stage.W / 2 + data[i * 3]! * unit + data[i * 3 + 2]! * unit + 0.045 * scale * unit;
+      const ny = stage.H / 2 - data[i * 3 + 1]! * unit;
       const show = shiftT * (zoom < 1.01 ? 1 : 0);
-      const focus = 1 - Math.min(Math.abs(ny - canvas.clientHeight * 0.5) / (ROW_GAP * scale * unit * 0.7), 1);
+      const focus = 1 - Math.min(Math.abs(ny - stage.H * 0.5) / (ROW_GAP * scale * unit * 0.7), 1);
       const alpha = show * Math.min(1, focus * 1.6);
       const note = notes[i - 1]!, title = titles[i - 1]!;
       note.style.opacity = alpha.toFixed(3);
       note.style.pointerEvents = alpha > 0.6 ? 'auto' : 'none';
-      const width = Math.max(90, Math.min(portrait ? 9999 : 24 * 16, canvas.clientWidth - nx - 18)).toFixed(0) + 'px';
+      const width = Math.max(90, Math.min(portrait ? 9999 : 24 * 16, stage.W - nx - 18)).toFixed(0) + 'px';
       note.style.width = width;
       title.style.width = width;
       const rpx = data[i * 3 + 2]! * unit;
@@ -299,6 +314,7 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
 
     const bg = bgOf();
     gl.uniform2f(U.res, canvas.width, canvas.height);
+    gl.uniform2f(U.stage, stage.W * dpr, stage.H * dpr);
     gl.uniform1f(U.k, STICKY * scale);
     gl.uniform3fv(U.balls, data);
     gl.uniform3f(U.bg, bg[0]!, bg[1]!, bg[2]!);
@@ -306,8 +322,8 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
 
     // The poster texture covers the on-screen part of the big circle (the whole
     // screen at 0% scroll), then stays attached to the circle.
-    const minSide = Math.min(canvas.width, canvas.height);
-    const hx = 0.5 * canvas.width / minSide, hy = 0.5 * canvas.height / minSide;
+    const minSide = Math.min(stage.W, stage.H);
+    const hx = 0.5 * stage.W / minSide, hy = 0.5 * stage.H / minSide;
     const bx = data[0]!, by = data[1]!, br = data[2]!;
     let rect: number[];
     if (zoom > 1.0001) {

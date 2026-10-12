@@ -55,6 +55,8 @@ const moreClass = 'pointer-events-auto mt-[0.9em] inline-flex items-center gap-2
   </Fragment>
 
   <canvas id="gl" class="fixed inset-0 block h-full w-full" data-photos={JSON.stringify(photos)}></canvas>
+  <!-- Measures 100svh so the animation ignores the mobile address bar -->
+  <div id="svh" class="invisible fixed left-0 top-0 h-svh w-px" aria-hidden="true"></div>
 
   <!-- Poster: HTML content clipped to the big circle by the animation -->
   <section class="poster" id="poster" aria-label="World Investment Competition 2026">
