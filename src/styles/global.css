@@ -1,0 +1,83 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+
+/* ---- Design tokens ---------------------------------------------------
+   Pages are either "light" (detail pages) or "dark" (landing). The tone is
+   set on <html data-tone> and every Tailwind color below follows it, so the
+   same header/nav components work on both. */
+@theme {
+  --font-sans: "Inter Variable", Inter, -apple-system, BlinkMacSystemFont,
+    "Helvetica Neue", "Hiragino Sans", "Noto Sans JP", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --color-paper: #f4f2ee;
+  --color-coal: #1d1b1b;
+}
+@theme inline {
+  --color-bg: var(--bg);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+}
+
+:root {
+  --bg: #f6f5f2;
+  --ink: #1d1b1b;
+  --muted: rgb(29 27 27 / 0.62);
+  --line: rgb(29 27 27 / 0.14);
+  --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 1.4 -0.2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+:root[data-tone="dark"] {
+  --bg: #141414;
+  --ink: #f2f2f2;
+  --muted: #9a9a9a;
+  --line: rgb(244 242 238 / 0.14);
+}
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body { @apply bg-bg text-ink font-sans; }
+  a { color: inherit; }
+  b, strong { @apply font-semibold; }
+}
+
+@layer components {
+  /* On light pages the header fades the content out beneath it */
+  [data-tone="light"] .site-header::before {
+    content: "";
+    position: absolute; inset: 0 0 -1.5rem; z-index: -1; pointer-events: none;
+    background: linear-gradient(to bottom, rgb(246 245 242 / 0.96), rgb(246 245 242 / 0));
+  }
+
+  /* Paper grain behind the detail pages */
+  .grain::before {
+    content: "";
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    opacity: 0.18; mix-blend-mode: multiply;
+    background-image: var(--noise);
+  }
+
+  /* Long-form content on the detail pages. The markup stays plain HTML
+     (h2/p/ul/table…) and the styling lives here instead of on every tag. */
+  .article {
+    h2 { @apply mt-11 mb-3.5 text-[1.35rem] font-semibold tracking-[-0.01em]; }
+    h3 { @apply mt-7 mb-2 text-[1.05rem] font-semibold; }
+    p { @apply mb-[1em]; }
+    ul, ol { @apply mb-[1.2em] pl-[1.3em]; }
+    ul { list-style: disc; }
+    ol { list-style: decimal; }
+    li { @apply my-[0.3em]; }
+    li::marker { color: var(--muted); }
+    a { @apply underline underline-offset-[0.2em] decoration-ink/40 hover:decoration-ink; }
+    .muted { @apply text-muted; }
+    .tbl-wrap { @apply overflow-x-auto; }
+    table { @apply w-full border-collapse my-2 mb-6 text-[0.97rem]; }
+    th, td { @apply py-[0.7em] pr-[0.6em] text-left align-top border-b border-line; }
+    th { @apply font-semibold; }
+    thead th { @apply text-muted font-medium text-[0.9rem]; }
+    .formula { @apply font-mono text-[0.95rem] px-4 py-3 border border-line rounded-lg overflow-x-auto; }
+  }
+}
+
+@utility tbc {
+  @apply inline-block px-[0.45em] py-[0.05em] rounded-[0.3em] text-[0.9em] text-muted border border-dashed border-ink/35;
+}

@@ -1,0 +1,43 @@
+---
+import '../styles/global.css';
+import SiteHeader from '../components/SiteHeader.astro';
+import { SITE } from '../data/site';
+import hero from '../assets/hero.jpg';
+
+interface Props {
+  title: string;
+  description: string;
+  ogTitle?: string;
+  ogType?: 'website' | 'article';
+  tone?: 'light' | 'dark';
+  themeColor?: string;
+}
+const { title, description, ogTitle = title, ogType = 'article', tone = 'light', themeColor = tone === 'dark' ? '#141414' : '#f6f5f2' } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const ogImage = new URL(hero.src, Astro.site);
+---
+
+<!doctype html>
+<html lang="en" data-tone={tone}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content={themeColor} />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content={SITE.name} />
+    <meta property="og:title" content={ogTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <slot name="head" />
+  </head>
+  <body class="relative">
+    <SiteHeader />
+    <slot />
+  </body>
+</html>

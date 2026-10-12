@@ -1,0 +1,14 @@
+---
+import { NAV } from '../data/site';
+interface Props { slug: string }
+const i = NAV.findIndex((n) => n.slug === Astro.props.slug);
+const prev = NAV[i - 1];
+const next = NAV[i + 1];
+---
+
+<nav class="mt-16 flex justify-between gap-4 border-t border-line pt-6 [&_a]:text-ink [&_a]:no-underline [&_span]:block [&_span]:text-[0.85rem] [&_span]:text-muted" aria-label="Pages">
+  {prev && <a href={prev.href}><span>Previous</span>{prev.label}</a>}
+  {next
+    ? <a href={next.href} class="ml-auto text-right"><span>Next</span>{next.label}</a>
+    : <a href="/" class="ml-auto text-right"><span>Back to</span>Top</a>}
+</nav>

@@ -1,0 +1,16 @@
+---
+import Detail from '../layouts/Detail.astro';
+import { SCHEDULE } from '../data/site';
+---
+
+<Detail slug="schedule" title="Schedule" lead="From entries opening in October to the closing ceremony in April. Dates are in Japan time unless noted.">
+<ul class="!list-none !p-0 mb-6">
+  {SCHEDULE.map((row) => (
+    <li class="!m-0 grid grid-cols-[7.5rem_1fr] gap-4 border-b border-line py-[0.7em]">
+      <span class="whitespace-nowrap font-semibold">{row.date}{row.tbc && <> <span class="tbc">TBC</span></>}</span>
+      <span>{row.event}{row.note && <span class="block text-[0.95rem] text-muted">{row.note}</span>}</span>
+    </li>
+  ))}
+</ul>
+<p class="muted">Official announcements, including weekly rankings and any schedule changes, are made in the WhatsApp group.</p>
+</Detail>
