@@ -1,10 +1,12 @@
 /**
  * Landing-page animation.
  *
- * The page itself never scrolls: wheel, touch and keyboard input move a
- * virtual scroll position that drives the timeline. That keeps mobile
- * browser chrome (the address bar) from collapsing mid-animation, which
- * would otherwise resize the viewport and re-typeset the poster.
+ * All layout maths runs in a fixed "stage" whose height is the small viewport
+ * (100svh) so that mobile browsers collapsing their toolbars does not resize
+ * the poster or re-typeset it mid-scroll. The stage is anchored to the bottom
+ * of the canvas: when the viewport grows, the extra space appears above the
+ * poster, where the dark background and the photo's top shade make it
+ * unobtrusive, and the sponsor strip stays on the bottom edge.
  *
  * A full-screen WebGL fragment shader draws six "metaballs": one large circle
  * holding the poster (rendered as HTML and clipped to the circle) and five
@@ -17,7 +19,8 @@ const VERT = 'attribute vec2 p; void main(){ gl_Position = vec4(p, 0.0, 1.0); }'
 
 const FRAG = /* glsl */ `
 precision highp float;
-uniform vec2 uRes;
+uniform vec2 uRes;         // canvas size (device px)
+uniform vec2 uFrame;       // stage size (device px), anchored to the bottom of the canvas
 uniform float uK;          // how strongly neighbouring circles merge
 uniform vec3 uBalls[6];    // xy = centre, z = radius (units of the shorter screen side)
 uniform vec3 uBg;
@@ -46,7 +49,7 @@ vec3 ballImage(sampler2D t, vec2 c, vec2 ext, float a, vec2 p){
   return texture2D(t, st).rgb;
 }
 void main(){
-  vec2 uv = (gl_FragCoord.xy - 0.5 * uRes) / min(uRes.x, uRes.y);
+  vec2 uv = (gl_FragCoord.xy - 0.5 * uFrame) / min(uFrame.x, uFrame.y);
   float d = 1000.0, dmin = 1000.0;
   float di[6];
   for (int i = 0; i < 6; i++) {
@@ -57,7 +60,7 @@ void main(){
   // Nearest circle owns the pixel; weights blend where circles merge.
   float w[6]; float wsum = 0.0;
   for (int i = 0; i < 6; i++) { w[i] = exp(-(di[i] - dmin) / 0.025); wsum += w[i]; }
-  float px = 1.0 / min(uRes.x, uRes.y);
+  float px = 1.0 / min(uFrame.x, uFrame.y);
   float inside = smoothstep(px * 1.2, -px * 1.2, d);
   vec3 img = ballImage(uTex0, uCen0, uExt0, uAsp[0], uv) * uDim0 * w[0]
            + ballImage(uTex1, uBalls[1].xy, vec2(uBalls[1].z), uAsp[1], uv) * w[1]
@@ -92,7 +95,7 @@ const bgOf = () => {
   return [(n >> 16) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
 };
 
-export function startHero(canvas: HTMLCanvasElement, photos: string[]): { scrollTo(y: number): void } | undefined {
+export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
   const errorEl = document.getElementById('error')!;
   const gl = canvas.getContext('webgl', { antialias: false });
   if (!gl) { errorEl.style.display = 'grid'; return; }
@@ -118,7 +121,7 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]): { scroll
   gl.enableVertexAttribArray(loc);
   gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
   const U = {
-    res: gl.getUniformLocation(prog, 'uRes'), k: gl.getUniformLocation(prog, 'uK'),
+    res: gl.getUniformLocation(prog, 'uRes'), stage: gl.getUniformLocation(prog, 'uFrame'), k: gl.getUniformLocation(prog, 'uK'),
     balls: gl.getUniformLocation(prog, 'uBalls'), bg: gl.getUniformLocation(prog, 'uBg'),
     asp: gl.getUniformLocation(prog, 'uAsp'), ext0: gl.getUniformLocation(prog, 'uExt0'),
     cen0: gl.getUniformLocation(prog, 'uCen0'), dim0: gl.getUniformLocation(prog, 'uDim0'),
@@ -160,6 +163,7 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]): { scroll
   const pFacts = pIn.querySelector<HTMLElement>('.p-facts')!;
   const heroLabel = document.getElementById('heroLabel')!;
   const heroH2 = heroLabel.querySelector('h2')!;
+  const trackEl = document.querySelector<HTMLElement>('.track')!;
   const secs = Array.from(document.querySelectorAll<HTMLElement>('#sections .sec'));
   const titles = secs.map((s) => s.querySelector<HTMLElement>('.title')!);
   const notes = secs.map((s) => s.querySelector<HTMLElement>('.note')!);
@@ -168,14 +172,19 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]): { scroll
   const data = new Float32Array(18);
   let current = 0;
 
-  // Stage = layout size in CSS px (the canvas fills the viewport).
-  const stage = { W: 0, H: 0 };
+  // Stage = frozen layout size in CSS px. Height comes from a 100svh probe
+  // when the browser supports it, so it ignores the mobile address bar.
+  const probe = document.getElementById('svh');
+  const stage = { W: 0, H: 0, top: 0 };   // top = offset of the stage inside the viewport
+  let dpr = 1;
   const resize = () => {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
     const w = Math.round(canvas.clientWidth * dpr), h = Math.round(canvas.clientHeight * dpr);
     if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; gl.viewport(0, 0, w, h); }
-    stage.W = canvas.clientWidth;
-    stage.H = canvas.clientHeight;
+    const fw = canvas.clientWidth;
+    const fh = Math.min(canvas.clientHeight, probe?.clientHeight || Infinity);
+    if (fw !== stage.W || fh !== stage.H) { stage.W = fw; stage.H = fh; }
+    stage.top = Math.max(0, canvas.clientHeight - stage.H);
   };
 
   // Poster typesetting: pick a base font size that fits the viewport.
@@ -213,7 +222,7 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]): { scroll
     const ox = rcx - W * s / 2, oy = rcy - H * s / 2;
     const cx = (W / 2 + bx * unit - ox) / s, cy = (H / 2 - by * unit - oy) / s;
     const r = br * unit / s;
-    poster.style.transform = `translate(${ox.toFixed(2)}px,${oy.toFixed(2)}px) scale(${s.toFixed(5)})`;
+    poster.style.transform = `translate(${ox.toFixed(2)}px,${(oy + stage.top).toFixed(2)}px) scale(${s.toFixed(5)})`;
     poster.style.clipPath = `circle(${r.toFixed(2)}px at ${cx.toFixed(2)}px ${cy.toFixed(2)}px)`;
     poster.style.visibility = (by - br) * unit > H / 2 ? 'hidden' : 'visible';
 
@@ -234,7 +243,7 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]): { scroll
     const finalCx = W / 2 - finalShift * finalScale * unit, finalR = RADII[0]! * finalScale * unit;
     let off = Math.min(finalR * 0.3, (W - 16 - hlNeed) - finalCx);
     off = Math.max(off, finalR * 0.05);
-    heroLabel.style.transform = `translate(${(pcx + off).toFixed(1)}px,${(pcy - heroLabel.offsetHeight / 2).toFixed(1)}px)`;
+    heroLabel.style.transform = `translate(${(pcx + off).toFixed(1)}px,${(pcy + stage.top - heroLabel.offsetHeight / 2).toFixed(1)}px)`;
 
     // Dim the poster slightly as we zoom out so it matches the photo circles.
     const zp = 1 - Math.log(zoom) / Math.log(3.8);
@@ -247,62 +256,15 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]): { scroll
     poster.classList.toggle('live', zoom > 3.3);   // buttons only clickable when nearly full-screen
   };
 
-  // ---- virtual scroll ------------------------------------------------------
-  // `virtualY` plays the role of scrollTop; the full timeline is TRACK_VH
-  // viewport-heights long, exactly as the original page-scroll version.
-  let virtualY = 0;
-  let velocity = 0;          // px per ms, for touch fling
-  const maxY = () => (TRACK_VH / 100) * stage.H;
-  const moveBy = (dy: number) => { virtualY = Math.min(Math.max(virtualY + dy, 0), maxY()); };
-  const targetProgress = () => (maxY() > 0 ? clamp01(virtualY / maxY()) : 0);
-  const inMenu = (t: EventTarget | null) => !!(t as Element | null)?.closest?.('#nav');
+  const targetProgress = () => {
+    const el = document.scrollingElement || document.documentElement;
+    const max = trackEl.offsetHeight - stage.H;
+    return max > 0 ? clamp01(el.scrollTop / max) : 0;
+  };
 
-  window.addEventListener('wheel', (e) => {
-    if (inMenu(e.target)) return;
-    e.preventDefault();
-    const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? stage.H : 1;
-    velocity = 0;
-    moveBy(e.deltaY * unit);
-  }, { passive: false });
-
-  let touchY = 0, touchT = 0;
-  window.addEventListener('touchstart', (e) => {
-    if (inMenu(e.target)) return;
-    touchY = e.touches[0]!.clientY; touchT = e.timeStamp; velocity = 0;
-  }, { passive: true });
-  window.addEventListener('touchmove', (e) => {
-    if (inMenu(e.target)) return;
-    e.preventDefault();
-    const y = e.touches[0]!.clientY, dt = Math.max(1, e.timeStamp - touchT);
-    const dy = touchY - y;
-    moveBy(dy);
-    velocity = dy / dt;
-    touchY = y; touchT = e.timeStamp;
-  }, { passive: false });
-  window.addEventListener('touchend', (e) => {
-    if (inMenu(e.target)) return;
-    if (e.timeStamp - touchT > 80) velocity = 0;   // finger stopped before lifting
-  });
-
-  window.addEventListener('keydown', (e) => {
-    if (inMenu(e.target) || (e.target as HTMLElement).tagName === 'INPUT') return;
-    const step = { ArrowDown: 60, ArrowUp: -60, PageDown: stage.H * 0.8, PageUp: -stage.H * 0.8, ' ': e.shiftKey ? -stage.H * 0.8 : stage.H * 0.8 }[e.key];
-    if (step !== undefined) { e.preventDefault(); velocity = 0; moveBy(step); }
-    else if (e.key === 'Home') { e.preventDefault(); virtualY = 0; }
-    else if (e.key === 'End') { e.preventDefault(); virtualY = maxY(); }
-  });
-
-  let lastMs = 0;
   const frame = (ms: number) => {
     resize();
     const t = reduceMotion ? 0 : ms / 1000;
-    const dt = lastMs ? Math.min(ms - lastMs, 50) : 16;
-    lastMs = ms;
-    if (Math.abs(velocity) > 0.005) {          // touch fling with friction
-      moveBy(velocity * dt);
-      velocity *= Math.pow(0.94, dt / 16);
-      if (virtualY <= 0 || virtualY >= maxY()) velocity = 0;
-    }
     current += (targetProgress() - current) * 0.08;
 
     const pos = current * TRACK_VH;
@@ -347,13 +309,14 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]): { scroll
       if (i === 1) secFontPx = Math.max(22, rpx * 0.5);
       title.style.opacity = note.style.opacity;
       const gap = 10, tH = title.offsetHeight, nH = note.offsetHeight;
-      const top = ny - (tH + gap + nH) / 2;
+      const top = ny + stage.top - (tH + gap + nH) / 2;
       title.style.transform = `translate(${nx.toFixed(1)}px,${top.toFixed(1)}px)`;
       note.style.transform = `translate(${nx.toFixed(1)}px,${(top + tH + gap).toFixed(1)}px)`;
     }
 
     const bg = bgOf();
     gl.uniform2f(U.res, canvas.width, canvas.height);
+    gl.uniform2f(U.stage, stage.W * dpr, stage.H * dpr);
     gl.uniform1f(U.k, STICKY * scale);
     gl.uniform3fv(U.balls, data);
     gl.uniform3f(U.bg, bg[0]!, bg[1]!, bg[2]!);
@@ -380,20 +343,23 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]): { scroll
     requestAnimationFrame(frame);
   };
 
-  // Position hand-off with the detail pages via ?y= (virtual scroll px).
+  // Scroll position hand-off with the detail pages via ?y=.
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
   const m = /[?&]y=(\d+)/.exec(location.search);
-  if (m) {
-    resize();
-    virtualY = Math.min(Number(m[1]), maxY());
-    current = targetProgress();
-    try { history.replaceState(null, '', location.pathname); } catch {}
-  }
+  const y = m ? Number(m[1]) : 0;
+  const t0 = performance.now();
+  (function hold() {
+    if (Math.abs(window.scrollY - y) > 2) { window.scrollTo(0, y); current = targetProgress(); }
+    if (performance.now() - t0 < 700) requestAnimationFrame(hold);
+  })();
+  window.addEventListener('load', () => { window.scrollTo(0, y); current = targetProgress(); });
+  if (m) { try { history.replaceState(null, '', location.pathname); } catch {} }
   document.addEventListener('click', (e) => {
     const a = (e.target as HTMLElement).closest?.('a[href^="/"]') as HTMLAnchorElement | null;
     const href = a?.getAttribute('href')?.split('?')[0];
-    if (a && href && href !== '/') a.href = href + '?y=' + Math.round(virtualY);
+    if (a && href && href !== '/') a.href = href + '?y=' + Math.round(window.scrollY);
   });
+  window.addEventListener('pageshow', (e) => { if (e.persisted) current = targetProgress(); });
 
   requestAnimationFrame(frame);
-  return { scrollTo(y) { velocity = 0; virtualY = Math.min(Math.max(y, 0), maxY()); } };
 }
