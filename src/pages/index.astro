@@ -65,6 +65,7 @@ const moreClass = 'pointer-events-auto mt-[0.9em] inline-flex items-center gap-2
           <h1 class="p-title" id="pTitle"><span>World</span><span>Investment</span><span>Competition</span></h1>
         </div>
       </div>
+      <div class="p-dim" id="pDim" aria-hidden="true"></div>
       <div class="p-panel">
         <div class="p-facts">
           <p class="p-lead">{SITE.description.split(' Free')[0]}</p>
@@ -178,6 +179,7 @@ const moreClass = 'pointer-events-auto mt-[0.9em] inline-flex items-center gap-2
     background-size: var(--gs, 220px); background-image: var(--noise);
   }
   .poster.live { pointer-events: auto; }
+  .p-dim { position: absolute; inset: 0; z-index: 3; background: #000; opacity: 0; pointer-events: none; }   /* zoom-out dimming, compositor-only */
   .p-in { position: relative; height: 100%; display: flex; flex-direction: column; font-size: var(--b, 16px); }
 
   /* Top half: photo with the (visually hidden) title */

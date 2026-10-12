@@ -87,6 +87,8 @@ const FLOW_LEN = 237.1;
 
 const smooth = (u: number) => u * u * (3 - 2 * u);
 const clamp01 = (v: number) => Math.min(Math.max(v, 0), 1);
+/** Write a style property only when the value actually changes (avoids needless style/layout work). */
+const setStyle = (el: HTMLElement, prop: string, value: string) => { if (el.style.getPropertyValue(prop) !== value) el.style.setProperty(prop, value); };
 const bgOf = () => {
   const m = /^#([0-9a-f]{6})$/i.exec(getComputedStyle(document.documentElement).getPropertyValue('--bg').trim());
   if (!m) return [0.08, 0.08, 0.08];
@@ -160,6 +162,7 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
   const pIn = document.getElementById('pIn')!;
   const pTitle = document.getElementById('pTitle')!;
   const pFacts = pIn.querySelector<HTMLElement>('.p-facts')!;
+  const pDim = document.getElementById('pDim')!;
   const heroLabel = document.getElementById('heroLabel')!;
   const heroH2 = heroLabel.querySelector('h2')!;
   const trackEl = document.querySelector<HTMLElement>('.track')!;
@@ -168,6 +171,7 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
   const notes = secs.map((s) => s.querySelector<HTMLElement>('.note')!);
 
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const bg = bgOf();   // read once: getComputedStyle every frame forces a style recalc
   const data = new Float32Array(18);
   let current = 0;
 
@@ -225,7 +229,7 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
   document.fonts?.ready.then(() => { lastW = 0; });
 
   // Scale the poster to the visible part of the big circle and clip it.
-  let hlKey = '', secFontPx = 26, hlNeed = 200;
+  let hlKey = '', secFontPx = 26, hlNeed = 200, hlHeight = 60;
   const placePoster = (rect: number[], bx: number, by: number, br: number, unit: number, zoom: number, shiftT: number, finalShift: number, finalScale: number) => {
     const W = stage.W, H = stage.H;
     const rcx = W / 2 + rect[0]! * unit, rcy = H / 2 - rect[1]! * unit;
@@ -234,16 +238,16 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
     const ox = rcx - W * s / 2, oy = rcy - H * s / 2;
     const cx = (W / 2 + bx * unit - ox) / s, cy = (H / 2 - by * unit - oy) / s;
     const r = br * unit / s;
-    poster.style.transform = `translate(${ox.toFixed(2)}px,${oy.toFixed(2)}px) scale(${s.toFixed(5)})`;
-    poster.style.clipPath = `circle(${r.toFixed(2)}px at ${cx.toFixed(2)}px ${cy.toFixed(2)}px)`;
-    poster.style.visibility = (by - br) * unit > H / 2 ? 'hidden' : 'visible';
+    setStyle(poster, 'transform', `translate(${ox.toFixed(1)}px,${oy.toFixed(1)}px) scale(${s.toFixed(4)})`);
+    setStyle(poster, 'clip-path', `circle(${r.toFixed(1)}px at ${cx.toFixed(1)}px ${cy.toFixed(1)}px)`);
+    setStyle(poster, 'visibility', (by - br) * unit > H / 2 ? 'hidden' : 'visible');
 
     // Heading next to the big circle: fades in once the column has shifted left.
     const pcx = W / 2 + bx * unit, pcy = H / 2 - by * unit;
     const hs = clamp01((shiftT - 0.7) / 0.3);
     const hlShow = (zoom < 1.01 ? 1 : 0) * smooth(hs);
-    heroLabel.style.opacity = hlShow.toFixed(3);
-    heroLabel.style.pointerEvents = hlShow > 0.6 ? 'auto' : 'none';
+    setStyle(heroLabel, 'opacity', hlShow.toFixed(2));
+    setStyle(heroLabel, 'pointer-events', hlShow > 0.6 ? 'auto' : 'none');
     const key = `${W}x${H}@${secFontPx.toFixed(1)}`;
     if (hlKey !== key) {
       hlKey = key;
@@ -251,21 +255,24 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
       heroLabel.style.width = 'auto';
       hlNeed = heroH2.scrollWidth + 2;
       heroLabel.style.width = hlNeed.toFixed(0) + 'px';
+      hlHeight = heroLabel.offsetHeight;
     }
     const finalCx = W / 2 - finalShift * finalScale * unit, finalR = RADII[0]! * finalScale * unit;
     let off = Math.min(finalR * 0.3, (W - 16 - hlNeed) - finalCx);
     off = Math.max(off, finalR * 0.05);
-    heroLabel.style.transform = `translate(${(pcx + off).toFixed(1)}px,${(pcy - heroLabel.offsetHeight / 2).toFixed(1)}px)`;
+    setStyle(heroLabel, 'transform', `translate(${(pcx + off).toFixed(1)}px,${(pcy - hlHeight / 2).toFixed(1)}px)`);
 
     // Dim the poster slightly as we zoom out so it matches the photo circles.
+    // A black overlay's opacity is compositor-only; filter/background changes
+    // would repaint the whole poster every frame.
     const zp = 1 - Math.log(zoom) / Math.log(3.8);
     const bright = 1 - 0.1 * zp;
-    pIn.style.filter = zp > 0.001 ? `brightness(${bright.toFixed(3)})` : 'none';
-    poster.style.backgroundColor = `rgb(${Math.round(12 * bright)},${Math.round(11 * bright)},${Math.round(11 * bright)})`;
-    poster.style.setProperty('--grain', (0.22 + 0.08 * zp).toFixed(3));
-    poster.style.setProperty('--gs', (220 / s).toFixed(1) + 'px');
+    setStyle(pDim, 'opacity', (1 - bright).toFixed(2));
+    setStyle(poster, '--grain', (0.22 + 0.08 * zp).toFixed(2));
+    setStyle(poster, '--gs', (Math.round(220 / s / 8) * 8) + 'px');   // quantised: a changed size repaints the grain
     gl.uniform1f(U.dim0, bright);
-    poster.classList.toggle('live', zoom > 3.3);   // buttons only clickable when nearly full-screen
+    const live = zoom > 3.3;                       // buttons only clickable when nearly full-screen
+    if (poster.classList.contains('live') !== live) poster.classList.toggle('live', live);
   };
 
   const targetProgress = () => {
@@ -283,9 +290,11 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
   const frame = (ms: number) => {
     resize();
     const t = reduceMotion ? 0 : ms / 1000;
-    current += (targetProgress() - current) * 0.08;
+    // Ease toward the scroll position with a fixed time constant, so the lag
+    // is the same at 15 fps (phones mid-gesture) as at 60 fps.
+    const dt = lastMs ? Math.min(ms - lastMs, 100) : 16.7; lastMs = ms; frames++;
+    current += (targetProgress() - current) * (1 - Math.pow(0.92, dt / 16.7));
     if (debugEl) {
-      const dt = lastMs ? ms - lastMs : 0; lastMs = ms; frames++;
       if (dt > worstDt) worstDt = dt;
       const el = document.scrollingElement || document.documentElement;
       debugEl.textContent = `f ${frames}  dt ${dt.toFixed(0)}ms  worst ${worstDt.toFixed(0)}ms
@@ -318,31 +327,41 @@ progress ${targetProgress().toFixed(3)}  current ${current.toFixed(3)}  max ${(t
       data[i * 3] = (x - shift * shiftT) * scale;
       data[i * 3 + 1] = (y + camY) * scale;
       data[i * 3 + 2] = RADII[i]! * (i === 0 ? 1 : rowShrink) * scale;
-      if (i === 0) continue;
+    }
 
-      // Heading + blurb to the right of each small circle.
+    // Heading + blurb to the right of each small circle. Writes that affect
+    // layout (width, font size) go first for all five, then one round of
+    // reads, then the transforms: no layout thrash.
+    const labels: { nx: number; ny: number; alpha: number }[] = [];
+    for (let i = 1; i < 6; i++) {
       const nx = stage.W / 2 + data[i * 3]! * unit + data[i * 3 + 2]! * unit + 0.045 * scale * unit;
       const ny = stage.H / 2 - data[i * 3 + 1]! * unit;
       const show = shiftT * (zoom < 1.01 ? 1 : 0);
       const focus = 1 - Math.min(Math.abs(ny - stage.H * 0.5) / (ROW_GAP * scale * unit * 0.7), 1);
       const alpha = show * Math.min(1, focus * 1.6);
       const note = notes[i - 1]!, title = titles[i - 1]!;
-      note.style.opacity = alpha.toFixed(3);
-      note.style.pointerEvents = alpha > 0.6 ? 'auto' : 'none';
       const width = Math.max(90, Math.min(portrait ? 9999 : 24 * 16, stage.W - nx - 18)).toFixed(0) + 'px';
-      note.style.width = width;
-      title.style.width = width;
-      const rpx = data[i * 3 + 2]! * unit;
-      title.style.fontSize = Math.max(22, rpx * 0.5).toFixed(1) + 'px';
-      if (i === 1) secFontPx = Math.max(22, rpx * 0.5);
-      title.style.opacity = note.style.opacity;
+      setStyle(note, 'width', width);
+      setStyle(title, 'width', width);
+      const fontPx = Math.max(22, data[i * 3 + 2]! * unit * 0.5);
+      setStyle(title, 'font-size', (Math.round(fontPx * 2) / 2) + 'px');
+      if (i === 1) secFontPx = fontPx;
+      labels.push({ nx, ny, alpha });
+    }
+    for (let i = 1; i < 6; i++) {
+      const { nx, ny, alpha } = labels[i - 1]!;
+      const note = notes[i - 1]!, title = titles[i - 1]!;
+      const a = alpha.toFixed(2);
+      setStyle(note, 'opacity', a);
+      setStyle(title, 'opacity', a);
+      setStyle(note, 'pointer-events', alpha > 0.6 ? 'auto' : 'none');
+      if (alpha <= 0 && note.style.transform) continue;   // hidden labels keep their last position
       const gap = 10, tH = title.offsetHeight, nH = note.offsetHeight;
       const top = ny - (tH + gap + nH) / 2;
-      title.style.transform = `translate(${nx.toFixed(1)}px,${top.toFixed(1)}px)`;
-      note.style.transform = `translate(${nx.toFixed(1)}px,${(top + tH + gap).toFixed(1)}px)`;
+      setStyle(title, 'transform', `translate(${nx.toFixed(1)}px,${top.toFixed(1)}px)`);
+      setStyle(note, 'transform', `translate(${nx.toFixed(1)}px,${(top + tH + gap).toFixed(1)}px)`);
     }
 
-    const bg = bgOf();
     gl.uniform2f(U.res, canvas.width, canvas.height);
     gl.uniform1f(U.k, STICKY * scale);
     gl.uniform3fv(U.balls, data);
