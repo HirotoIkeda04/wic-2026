@@ -274,10 +274,26 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
     return max > 0 ? clamp01(el.scrollTop / max) : 0;
   };
 
+  // ?debug shows live numbers in the corner (used to diagnose device issues)
+  const debugEl = /[?&]debug/.test(location.search) ? document.body.appendChild(document.createElement('pre')) : null;
+  if (debugEl) debugEl.style.cssText = 'position:fixed;left:4px;top:70px;z-index:100;margin:0;padding:4px 6px;font:12px/1.3 ui-monospace,monospace;color:#0f0;background:rgba(0,0,0,.7);pointer-events:none;white-space:pre';
+  let frames = 0, lastMs = 0, worstDt = 0;
+  window.addEventListener('scroll', () => { if (debugEl) debugEl.dataset.scrollEv = String((Number(debugEl.dataset.scrollEv) || 0) + 1); }, { passive: true });
+
   const frame = (ms: number) => {
     resize();
     const t = reduceMotion ? 0 : ms / 1000;
     current += (targetProgress() - current) * 0.08;
+    if (debugEl) {
+      const dt = lastMs ? ms - lastMs : 0; lastMs = ms; frames++;
+      if (dt > worstDt) worstDt = dt;
+      const el = document.scrollingElement || document.documentElement;
+      debugEl.textContent = `f ${frames}  dt ${dt.toFixed(0)}ms  worst ${worstDt.toFixed(0)}ms
+scrollY ${window.scrollY.toFixed(0)}  scrollTop ${el.scrollTop.toFixed(0)}  scrollEv ${debugEl.dataset.scrollEv || 0}
+inner ${window.innerWidth}x${window.innerHeight}  vv ${visualViewport?.height.toFixed(0)}@${visualViewport?.offsetTop.toFixed(0)}
+canvas ${canvas.clientWidth}x${canvas.clientHeight}  stage ${stage.W}x${stage.H}  typeset ${typeset.W}x${typeset.H}
+progress ${targetProgress().toFixed(3)}  current ${current.toFixed(3)}  max ${(trackEl.offsetHeight - (typeset.H || stage.H)).toFixed(0)}`;
+    }
 
     const pos = current * TRACK_VH;
     const zoom = Math.pow(3.8, 1 - smooth(Math.min(pos / ZOOM_END, 1)));
