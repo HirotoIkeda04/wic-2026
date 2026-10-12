@@ -2,9 +2,11 @@
  * Landing-page animation.
  *
  * The poster always fills the viewport, like a normal fixed element. Mobile
- * browsers change the viewport height when their toolbars collapse; the
- * poster's halves follow that, while the expensive typesetting only re-runs
- * when the width changes or the viewport gets lower than the typeset height.
+ * browsers change the viewport height when their toolbars collapse; the photo
+ * stage and the type keep their typeset size and the facts panel absorbs the
+ * difference in the dark fade below the photo (see --stage-h in index.astro).
+ * The expensive typesetting only re-runs when the width changes or the
+ * viewport gets lower than the typeset height.
  *
  * A full-screen WebGL fragment shader draws six "metaballs": one large circle
  * holding the poster (rendered as HTML and clipped to the circle) and five
@@ -197,6 +199,7 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
     lastW = W; lastH = H; typeset.W = W; typeset.H = H;
     poster.style.width = W + 'px';
     poster.style.height = H + 'px';
+    pIn.style.setProperty('--stage-h', H + 'px');   // photo stage = half of this; extra height goes under the photo
     const wide = W > H * 1.05 && W >= 640;
     poster.classList.toggle('wide', wide);
     let b = Math.max(11, Math.min(wide ? Math.min(W / 62, H / 34) : Math.min(W / 22.5, H / 44), wide ? 19 : 24));
