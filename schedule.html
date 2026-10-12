@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Schedule — World Investment Competition 2026</title>
+<meta name="description" content="From entries opening in October to the closing ceremony in April. Dates are in Japan time unless noted.">
+<link rel="canonical" href="https://wic.ihiro.page/schedule.html">
+<meta name="theme-color" content="#f6f5f2">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="World Investment Competition">
+<meta property="og:title" content="Schedule — WIC 2026">
+<meta property="og:description" content="From entries opening in October to the closing ceremony in April. Dates are in Japan time unless noted.">
+<meta property="og:url" content="https://wic.ihiro.page/schedule.html">
+<meta property="og:image" content="https://wic.ihiro.page/wic-assets/hero.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="wic-assets/detail.css">
+</head>
+<body>
+<header class="hdr">
+  <a class="brand" href="./" aria-label="WIC 2026"><span class="b-big">WIC</span><span class="b-sub">World Investment<br>Competition 2026</span></a>
+  <div class="right">
+    <a class="entry" href="#">Entry</a>
+    <button class="menu" id="menuBtn" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span></span></button>
+  </div>
+</header>
+<nav class="nav" id="nav" aria-label="Menu">
+  <div class="links"><a href="divisions.html">Divisions</a><a href="rules.html">Rules</a><a href="scoring.html">Scoring &amp; Awards</a><a href="schedule.html" aria-current="page">Schedule</a><a href="past.html">Past editions</a></div>
+  <div class="nfoot">
+    <p><b>Organizer</b>Japan Students Investment Union (JPSI)<br>AI Agent division co-host: Waseda AI Society</p>
+    <p class="contact"><b>Contact</b><a href="#">Email</a><a href="#">X</a><a href="#">Instagram</a></p>
+    <p class="legal">JPSI's activities are for student investment education and do not recommend buying or selling any financial product. © JPSI</p>
+  </div>
+</nav>
+<main>
+<a class="back" href="index.html" id="backLink"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Back</a>
+<h1>Schedule</h1>
+<p class="lead">From entries opening in October to the closing ceremony in April. Dates are in Japan time unless noted.</p>
+
+<ul class="tl">
+<li><span class="d">Oct 15, 2026</span><span>Entries open <span class="s">Apply separately for each division.</span></span></li>
+<li><span class="d">Dec 7</span><span>Opening ceremony <span class="s">Online. At least one member of each team must attend.</span></span></li>
+<li><span class="d">Dec 7 – 20</span><span>Trader: test trading <span class="s">Set up your account and get used to TWS.</span></span></li>
+<li><span class="d">Dec 7 – 31</span><span>AI Agent: development</span></li>
+<li><span class="d">Dec 31</span><span>Trader: optional monthly report for January</span></li>
+<li><span class="d">Jan 4, 2027</span><span>Trader: live trading begins</span></li>
+<li><span class="d">Jan 4 – 31</span><span>AI Agent: trial run</span></li>
+<li><span class="d">Jan 31</span><span>Trader: optional monthly report for February</span></li>
+<li><span class="d">Feb 1</span><span>AI Agent: live trading begins</span></li>
+<li><span class="d">Feb 28</span><span>Trader: optional monthly report for March</span></li>
+<li><span class="d">Mar 25</span><span>Live trading ends <span class="s">All positions must be closed by 15:50 US Eastern Time. Anything still open is closed by the organizers before results are calculated.</span></span></li>
+<li><span class="d">Mar 26 – 31</span><span>Reports due <span class="s">Trader: final report. AI Agent: post-report and logs.</span></span></li>
+<li><span class="d">Apr 22 <span class="tbc">TBC</span></span><span>Closing and awards ceremony <span class="s">In person in Tokyo, with online participation available.</span></span></li>
+</ul>
+<p class="muted">Official announcements, including weekly rankings and any schedule changes, are made in the WhatsApp group.</p>
+
+<nav class="pager"><a class="prev" href="scoring.html"><span>Previous</span>Scoring &amp; Awards</a><a class="next" href="past.html"><span>Next</span>Past editions</a></nav>
+</main>
+<footer class="foot"><p>This page reflects the participant guide dated October 5, 2026. Details marked TBC will be announced later. © JPSI</p></footer>
+<script>
+(function () {
+  // 詳細ページは常に先頭から表示する。読み込み直後は環境側が位置を動かすことがあるので、しばらく先頭に保つ
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  var t0 = performance.now();
+  (function hold() { if (window.scrollY > 2) window.scrollTo(0, 0); if (performance.now() - t0 < 700) requestAnimationFrame(hold); })();
+  window.addEventListener('load', function () { window.scrollTo(0, 0); });
+  // トップで開く前の位置（?y=）を、Back と各ページへのリンクに引き継ぐ
+  var m = /[?&]y=(\d+)/.exec(location.search);
+  if (m) {
+    document.querySelectorAll('a[href$=".html"]').forEach(function (a) { a.href = a.getAttribute('href') + '?y=' + m[1]; });
+    try { history.replaceState(null, '', location.pathname); } catch (e) {}
+  }
+})();
+(function () {
+  var b = document.getElementById('menuBtn'), n = document.getElementById('nav');
+  b.addEventListener('click', function () {
+    var o = !n.classList.contains('open');
+    n.classList.toggle('open', o); b.classList.toggle('open', o);
+    b.setAttribute('aria-expanded', String(o)); b.setAttribute('aria-label', o ? 'Close menu' : 'Menu');
+  });
+})();
+</script>
+</body>
+</html>
