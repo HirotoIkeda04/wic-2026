@@ -183,6 +183,11 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
     const fw = canvas.clientWidth;
     const fh = Math.min(canvas.clientHeight, probe?.clientHeight || Infinity);
     if (fw !== stage.W || fh !== stage.H) { stage.W = fw; stage.H = fh; }
+    // The poster element itself follows the real viewport so its bottom strip
+    // stays glued to the screen edge; the photo and type stay at stage size and
+    // the facts panel absorbs the difference (see --stage-h in index.astro).
+    const ph = canvas.clientHeight + 'px';
+    if (poster.style.height !== ph) poster.style.height = ph;
   };
 
   // Poster typesetting: pick a base font size that fits the viewport.
@@ -192,7 +197,8 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
     if (W === lastW && H === lastH) return;
     lastW = W; lastH = H;
     poster.style.width = W + 'px';
-    poster.style.height = H + 'px';
+    poster.style.height = H + 'px';          // typeset against the stage, restored below
+    pIn.style.setProperty('--stage-h', H + 'px');
     const wide = W > H * 1.05 && W >= 640;
     poster.classList.toggle('wide', wide);
     let b = Math.max(11, Math.min(wide ? Math.min(W / 62, H / 34) : Math.min(W / 22.5, H / 44), wide ? 19 : 24));
@@ -207,6 +213,7 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
     }
     let ps = 1;
     while (ps > 0.76 && pFacts.scrollHeight > pFacts.clientHeight + 1) { ps -= 0.03; pIn.style.setProperty('--ps', ps.toFixed(2)); }
+    poster.style.height = canvas.clientHeight + 'px';
   };
   document.fonts?.ready.then(() => { lastW = 0; });
 

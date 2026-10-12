@@ -184,7 +184,7 @@ const moreClass = 'pointer-events-auto mt-[0.9em] inline-flex items-center gap-2
 
   /* Top half: photo with the (visually hidden) title */
   .p-stage {
-    position: relative; flex: 0 0 50%;
+    position: relative; flex: 0 0 calc(var(--stage-h, 100%) * 0.5);   /* half the stage, not of the (possibly taller) poster */
     display: flex; flex-direction: column; justify-content: space-between;
     padding: calc(env(safe-area-inset-top, 0px) + 3.6em) 1.6em 1.3em;
     overflow: hidden; background: #111;
