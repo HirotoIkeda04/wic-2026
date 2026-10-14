@@ -1,0 +1,173 @@
+/*
+ * WIC 2026 styles. Import this from the project's main Tailwind stylesheet
+ * (the one that has `@import "tailwindcss"`), e.g. `@import "../components/wic/wic.css";`
+ * so that the @theme tokens and @apply rules below are processed by Tailwind.
+ *
+ * Pages are either "light" (detail pages) or "dark" (landing). The tone is set
+ * with `data-tone` on the page wrapper (see WicPage) and every `wic-*` color
+ * token follows it, so the same header serves both.
+ */
+
+@theme {
+  --font-wic: "Inter Variable", Inter, -apple-system, BlinkMacSystemFont, "Helvetica Neue",
+    "Hiragino Sans", "Noto Sans JP", Arial, sans-serif;
+  --color-wic-paper: #f4f2ee;
+  --color-wic-coal: #1d1b1b;
+}
+@theme inline {
+  --color-wic-bg: var(--wic-bg);
+  --color-wic-ink: var(--wic-ink);
+  --color-wic-muted: var(--wic-muted);
+  --color-wic-line: var(--wic-line);
+}
+
+.wic {
+  --wic-bg: #f6f5f2;
+  --wic-ink: #1d1b1b;
+  --wic-muted: rgb(29 27 27 / 0.62);
+  --wic-line: rgb(29 27 27 / 0.14);
+  --wic-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 1.4 -0.2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  -webkit-text-size-adjust: 100%;
+  font-family: var(--font-wic);
+  background: var(--wic-bg);
+  color: var(--wic-ink);
+}
+.wic[data-tone="dark"] {
+  --wic-bg: #141414;
+  --wic-ink: #f2f2f2;
+  --wic-muted: #9a9a9a;
+  --wic-line: rgb(244 242 238 / 0.14);
+}
+@layer base {
+  .wic a { color: inherit; }
+  .wic b, .wic strong { font-weight: 600; }
+}
+
+@layer components {
+  /* On light pages the header fades the content out beneath it */
+  .wic[data-tone="light"] .wic-header::before {
+    content: "";
+    position: absolute; inset: 0 0 -1.5rem; z-index: -1; pointer-events: none;
+    background: linear-gradient(to bottom, rgb(246 245 242 / 0.96), rgb(246 245 242 / 0));
+  }
+
+  /* Paper grain behind the detail pages */
+  .wic-grain::before {
+    content: "";
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    opacity: 0.18; mix-blend-mode: multiply;
+    background-image: var(--wic-noise);
+  }
+
+  /* Long-form content on the detail pages. The markup stays plain HTML
+     (h2/p/ul/table…) and the styling lives here instead of on every tag. */
+  .wic-article {
+    h2 { @apply mt-11 mb-3.5 text-[1.35rem] font-semibold tracking-[-0.01em]; }
+    h3 { @apply mt-7 mb-2 text-[1.05rem] font-semibold; }
+    p { @apply mb-[1em]; }
+    ul, ol { @apply mb-[1.2em] pl-[1.3em]; }
+    ul { list-style: disc; }
+    ol { list-style: decimal; }
+    li { @apply my-[0.3em]; }
+    li::marker { color: var(--wic-muted); }
+    a { @apply underline underline-offset-[0.2em] decoration-wic-ink/40 hover:decoration-wic-ink; }
+    .muted { @apply text-wic-muted; }
+    .tbl-wrap { @apply overflow-x-auto; }
+    table { @apply w-full border-collapse my-2 mb-6 text-[0.97rem]; }
+    th, td { @apply py-[0.7em] pr-[0.6em] text-left align-top border-b border-wic-line; }
+    th { @apply font-semibold; }
+    thead th { @apply text-wic-muted font-medium text-[0.9rem]; }
+    .formula { @apply font-mono text-[0.95rem] px-4 py-3 border border-wic-line rounded-lg overflow-x-auto; }
+  }
+  .wic-tbc {
+    @apply inline-block px-[0.45em] py-[0.05em] rounded-[0.3em] text-[0.9em] text-wic-muted border border-dashed border-wic-ink/35;
+  }
+
+  /* ---- Landing poster ----------------------------------------------------
+     The poster is typeset in `em` against custom properties the animation sets
+     per viewport (--b base size, --t title size, --ps facts scale) and is then
+     transformed + clipped every frame (see hero.ts). */
+  .wic-poster {
+    --black: #0c0b0b;
+    --paper: #f5f0ea;
+    position: fixed; top: 0; left: 0; z-index: 10;
+    overflow: hidden;
+    background: var(--black);
+    color: var(--paper);
+    transform-origin: 0 0;
+    will-change: transform, clip-path;
+    pointer-events: none;
+  }
+  .wic-poster::after {          /* paper grain, static */
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    opacity: var(--grain, 0.22); mix-blend-mode: overlay;
+    background-size: var(--gs, 220px); background-image: var(--wic-noise);
+  }
+  .wic-poster.live { pointer-events: auto; }
+  .wic-poster .p-dim { position: absolute; inset: 0; z-index: 3; background: #000; opacity: 0; pointer-events: none; }
+  .wic-poster .p-in { position: relative; height: 100%; display: flex; flex-direction: column; font-size: var(--b, 16px); }
+
+  /* Top half: photo with the (visually hidden) title */
+  .wic-poster .p-stage {
+    position: relative; flex: 0 0 50%;
+    display: flex; flex-direction: column; justify-content: space-between;
+    padding: calc(env(safe-area-inset-top, 0px) + 3.6em) 1.6em 1.3em;
+    overflow: hidden; background: #111;
+  }
+  .wic-poster .p-stage img { position: absolute; top: 0; left: 0; width: 100%; height: 118%; object-fit: cover; object-position: 50% 0%; }
+  .wic-poster .p-stage::before {
+    content: ""; position: absolute; inset: 0; z-index: 1;
+    background: linear-gradient(to bottom,
+      rgb(0 0 0 / 0.78) 0%, rgb(0 0 0 / 0.35) 38%, rgb(0 0 0 / 0) 58%,
+      rgb(0 0 0 / 0) 72%, rgb(12 11 11 / 0.75) 90%, #0c0b0b 100%);
+  }
+  .wic-poster .p-titles { position: relative; z-index: 2; }
+  .wic-poster .p-title {
+    display: inline-block; margin: 0;
+    font-weight: 900; font-size: var(--t, 5em); line-height: 0.95; letter-spacing: -0.025em;
+    text-transform: uppercase; white-space: nowrap;
+  }
+  .wic-poster .p-title > span { display: block; }
+  /* Measured for sizing but kept out of view (the logo carries the name) */
+  .wic-poster .p-titles .p-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+  /* Bottom half: key facts, set like a printed notice */
+  .wic-poster .p-panel { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; font-size: calc(var(--ps, 1) * 1em); background: var(--black); color: #f2f2f2; }
+  .wic-poster .p-facts { flex: 1 1 0; min-height: 0; padding: 0.4em 1.6em 0.9em; display: flex; flex-direction: column; justify-content: space-between; gap: 0.6em; }
+  .wic-poster .p-lead { margin: 0; font-size: 0.8em; line-height: 1.45; color: rgb(242 242 242 / 0.92); text-wrap: pretty; }
+  .wic-poster .p-stats { display: grid; grid-template-columns: 1fr 1fr 1.25fr; column-gap: 0.8em; border-top: 1px solid rgb(242 242 242 / 0.16); padding: 0.75em 0; }
+  .wic-poster .p-stat .n { display: block; font-size: 1.55em; font-weight: 700; letter-spacing: -0.03em; line-height: 1.05; white-space: nowrap; }
+  .wic-poster .p-stat .l { display: block; font-size: 0.78em; font-weight: 600; margin-top: 0.15em; }
+  .wic-poster .p-stat .s { display: block; font-size: 0.72em; color: rgb(242 242 242 / 0.6); margin-top: 0.2em; line-height: 1.3; }
+  .wic-poster .p-divs { display: grid; grid-template-columns: 1fr 1fr; column-gap: 0.8em; border-top: 1px solid rgb(242 242 242 / 0.16); padding: 0.75em 0 0.6em; margin-top: -0.6em; }
+  .wic-poster .p-dv .n { display: block; font-size: 1.05em; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
+  .wic-poster .p-dv .l { display: block; font-size: 0.78em; font-weight: 600; margin-top: 0.15em; }
+  .wic-poster .p-dv .s { display: block; font-size: 0.72em; color: rgb(242 242 242 / 0.6); margin-top: 0.2em; }
+
+  /* White strip: sponsors and organizer. Not affected by the facts scale. */
+  .wic-poster .p-strip { background: #f6f5f2; color: #1d1b1b; font-size: var(--b, 16px); padding: 0.9em 1.6em calc(env(safe-area-inset-bottom, 0px) + 0.85em); }
+  .wic-poster .p-spons { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); align-items: center; justify-items: center; gap: 0.7em 1em; }
+  .wic-poster .p-spons li { min-width: 0; }
+  .wic-poster .p-spons li:nth-child(-n+3) { grid-column: span 2; }
+  .wic-poster .p-spons li:nth-child(n+4) { grid-column: span 3; }
+  .wic-poster .p-spons img { display: block; width: calc(var(--w, 5) * 0.92em); max-width: 100%; height: auto; transform: translateY(var(--y, 0)); }
+  .wic-poster .p-sk { margin: 0 0 0.6em; display: flex; align-items: center; gap: 0.8em; font-size: 0.64em; font-weight: 600; color: #000; white-space: nowrap; }
+  .wic-poster .p-sk::before, .wic-poster .p-sk::after { content: ""; flex: 1; height: 1px; background: rgb(0 0 0 / 0.25); }
+  .wic-poster .p-sk2 { margin-top: 0.9em; }
+  .wic-poster .p-by { margin: 0.35em 0 0; text-align: center; font-size: 0.62em; color: #000; }
+  @media (min-width: 640px) {
+    .wic-poster .p-spons { display: flex; justify-content: space-between; gap: 0.8em 2em; max-width: 720px; margin-left: auto; margin-right: auto; }
+  }
+
+  /* Landscape viewports: same stacking, wider measure */
+  .wic-poster.wide .p-stage img { height: 100%; object-position: 50% 62%; }
+  .wic-poster.wide .p-stage { padding: calc(env(safe-area-inset-top, 0px) + 4.2em) 2.6em 1.6em; }
+  .wic-poster.wide .p-facts { display: grid; grid-template-columns: 1.1fr 1.4fr; grid-template-rows: auto auto; column-gap: 3em; align-content: center; padding: 0.6em 2.6em 1em; }
+  .wic-poster.wide .p-lead { font-size: 0.95em; max-width: 24em; grid-row: 1 / span 2; align-self: center; }
+  .wic-poster.wide .p-stats { border: 0; padding: 0; column-gap: 2em; }
+  .wic-poster.wide .p-stat .n { font-size: 2em; }
+  .wic-poster.wide .p-divs { grid-column: 2; grid-template-columns: 1fr 1fr 1.25fr; column-gap: 2em; padding: 0.7em 0 0; margin-top: 0.6em; }
+  .wic-poster.wide .p-strip { padding: 0.95em 2.6em; }
+  .wic-poster.wide .p-strip > * { max-width: 720px; margin-left: auto; margin-right: auto; }
+  .wic-poster.wide .p-spons { display: flex; justify-content: space-between; gap: 0.8em 2em; max-width: 720px; }
+}

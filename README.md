@@ -5,8 +5,9 @@ This repository is a portfolio mirror served at <https://wic.ihiro.page>; the of
 
 ## Stack
 
-- [Astro](https://astro.build) (static output, zero client JS except the landing animation and the menu)
-- [Tailwind CSS v4](https://tailwindcss.com) via the Vite plugin, with light/dark tone tokens in `src/styles/global.css`
+- React 19 components (TSX) + [Tailwind CSS v4](https://tailwindcss.com), written to drop into the
+  JPSI site (Next.js). See [HANDOFF.md](HANDOFF.md).
+- [Astro](https://astro.build) as the static shell for this mirror (head metadata, routing, build)
 - Inter, self-hosted through `@fontsource-variable/inter`
 - Deployed to GitHub Pages by `.github/workflows/deploy.yml`
 
@@ -14,12 +15,15 @@ This repository is a portfolio mirror served at <https://wic.ihiro.page>; the of
 
 ```
 src/
-  pages/        one .astro file per page
-  layouts/      Base (head, header, nav) and Detail (text pages)
-  components/   SiteHeader, Pager, Callout
-  data/site.ts  navigation, schedule, organizer details
-  scripts/      landing-page WebGL animation
-  assets/       photos and sponsor logos (optimized at build time)
+  wic/          everything that moves to the Next.js site
+    Landing.tsx, DetailPage.tsx, WicHeader.tsx, WicPage.tsx, Pager.tsx, Callout.tsx
+    pages/      Divisions, Rules, Scoring, Schedule, Past (page bodies + meta)
+    hero.ts     landing-page WebGL animation (framework-free)
+    data.ts     navigation, schedule, organizer details, image paths
+    wic.css     tone tokens, article styles, poster layout
+  pages/        thin .astro wrappers, one per route
+  layouts/      Base.astro (document head)
+public/images/wic/2026/   photos and sponsor logos
 ```
 
 ## Develop

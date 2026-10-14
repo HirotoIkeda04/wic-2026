@@ -305,7 +305,7 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]): { toTop(
     if (heroY >= lockEnd()) { heroY = lockEnd(); unlock(); }
     else if (heroY <= 0) { heroY = 0; velocity = 0; }
   };
-  const inMenu = (t: EventTarget | null) => !!(t as Element | null)?.closest?.('#nav');
+  const inMenu = (t: EventTarget | null) => !!(t as Element | null)?.closest?.('#wic-nav');
 
   if (touchDevice) {
     let touchY = 0, touchT = 0, active = false, carry = false;

@@ -1,24 +1,25 @@
 ---
+/**
+ * Document shell for the wic.ihiro.page mirror: <head> metadata only. The
+ * page body is a React tree from src/wic (what moves to the Next.js site).
+ */
 import '../styles/global.css';
-import SiteHeader from '../components/SiteHeader.astro';
-import { SITE } from '../data/site';
-import hero from '../assets/hero.jpg';
+import { SITE, WIC_IMAGES } from '../wic/data';
 
 interface Props {
   title: string;
   description: string;
   ogTitle?: string;
   ogType?: 'website' | 'article';
-  tone?: 'light' | 'dark';
   themeColor?: string;
 }
-const { title, description, ogTitle = title, ogType = 'article', tone = 'light', themeColor = tone === 'dark' ? '#141414' : '#f6f5f2' } = Astro.props;
+const { title, description, ogTitle = title, ogType = 'article', themeColor = '#f6f5f2' } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
-const ogImage = new URL(hero.src, Astro.site);
+const ogImage = new URL(WIC_IMAGES.hero, Astro.site);
 ---
 
 <!doctype html>
-<html lang="en" data-tone={tone}>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -36,8 +37,7 @@ const ogImage = new URL(hero.src, Astro.site);
     <meta name="twitter:card" content="summary_large_image" />
     <slot name="head" />
   </head>
-  <body class="relative">
-    <SiteHeader />
+  <body>
     <slot />
   </body>
 </html>

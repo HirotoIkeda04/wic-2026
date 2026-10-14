@@ -1,36 +1,14 @@
 ---
-import { Image } from 'astro:assets';
 import Base from '../layouts/Base.astro';
-import { NAV, SITE } from '../data/site';
-import hero from '../assets/hero.jpg';
-import divisions from '../assets/divisions.jpg';
-import rules from '../assets/rules.jpg';
-import scoring from '../assets/scoring.jpg';
-import schedule from '../assets/schedule.jpg';
-import past from '../assets/past.jpg';
-import logoIbkr from '../assets/logo-ibkr.png';
-import logoTradingView from '../assets/logo-tradingview.png';
-import logoWebull from '../assets/logo-webull.png';
-import logoOkayasu from '../assets/logo-okayasu.png';
-import logoNsj from '../assets/logo-nsj.png';
-
-/* Photos for the five small circles, in NAV order */
-const photos = [divisions, rules, scoring, schedule, past].map((p) => p.src);
-
-const sponsors = [
-  { src: logoIbkr, alt: 'Interactive Brokers', w: 6.2, y: '-0.16em' },
-  { src: logoTradingView, alt: 'TradingView', w: 5.3, y: '0.055em' },
-  { src: logoWebull, alt: 'Webull Securities', w: 3.74 },
-  { src: logoOkayasu, alt: 'Okayasu Shoji Co., Ltd.', w: 5.0 },
-  { src: logoNsj, alt: 'Nihon Securities Journal', w: 4.2 },
-];
+import { Landing } from '../wic/Landing';
+import { SITE, WIC_IMAGES } from '../wic/data';
 
 const siteUrl = Astro.site!.toString();
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Event',
   name: 'World Investment Competition 2026',
-  description: 'University teams from around the world compete in U.S. stock demo trading, ranked on both returns and investment reports.',
+  description: SITE.lead,
   startDate: '2026-12-07',
   endDate: '2027-04-22',
   eventAttendanceMode: 'https://schema.org/MixedEventAttendanceMode',
@@ -41,208 +19,14 @@ const jsonLd = {
   ],
   organizer: { '@type': 'Organization', name: SITE.organizer, url: SITE.organizerUrl },
   offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD', availability: 'https://schema.org/InStock', validFrom: '2026-10-15', url: siteUrl },
-  image: new URL(hero.src, Astro.site).toString(),
+  image: new URL(WIC_IMAGES.hero, Astro.site).toString(),
   url: siteUrl,
 };
-
-const blurbClass = 'm-0 text-[0.86rem] leading-[1.5] text-muted [text-wrap:pretty] [&+p]:mt-[0.55em] [&_b]:text-ink';
-const moreClass = 'pointer-events-auto mt-[0.9em] inline-flex items-center gap-2 rounded-full border border-paper/55 px-4 py-2 text-[0.82rem] text-ink no-underline hover:border-ink';
 ---
 
-<Base title={SITE.title} description={SITE.description} ogTitle="World Investment Competition 2026" ogType="website" tone="dark">
+<Base title={SITE.title} description={SITE.description} ogTitle="World Investment Competition 2026" ogType="website" themeColor="#141414">
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
   </Fragment>
-
-  <canvas id="gl" class="fixed inset-0 block h-full w-full" data-photos={JSON.stringify(photos)}></canvas>
-
-  <!-- Poster: HTML content clipped to the big circle by the animation -->
-  <section class="poster" id="poster" aria-label="World Investment Competition 2026">
-    <div class="p-in" id="pIn">
-      <div class="p-stage">
-        <Image src={hero} alt="WIC2025 awards ceremony: judges and sponsors on stage, finalist teams joining on screen" loading="eager" fetchpriority="high" widths={[700, 1400]} sizes="100vw" />
-        <div class="p-titles">
-          <h1 class="p-title" id="pTitle"><span>World</span><span>Investment</span><span>Competition</span></h1>
-        </div>
-      </div>
-      <div class="p-dim" id="pDim" aria-hidden="true"></div>
-      <div class="p-panel">
-        <div class="p-facts">
-          <p class="p-lead">{SITE.description.split(' Free')[0]}</p>
-          <div class="p-stats">
-            <div class="p-stat"><span class="n">Free</span><span class="l">to enter</span><span class="s">Undergrad &amp; grad students</span></div>
-            <div class="p-stat"><span class="n">$10,000</span><span class="l">in prizes</span><span class="s">incl. flights to Japan</span></div>
-            <div class="p-stat"><span class="n">Jan–Mar</span><span class="l">2027 trading period</span><span class="s">Entries close [TBC]</span></div>
-          </div>
-          <div class="p-divs">
-            <div class="p-dv"><span class="n">Trader division</span><span class="l">You trade.</span><span class="s">Teams of 3</span></div>
-            <div class="p-dv"><span class="n">AI Agent division</span><span class="l">Your agent trades.</span><span class="s">Teams of 1–3</span></div>
-          </div>
-        </div>
-        <div class="p-strip">
-          <p class="p-sk">2026 Sponsors</p>
-          <ul class="p-spons" aria-label="2026 Sponsors">
-            {sponsors.map((s) => (
-              <li><Image src={s.src} alt={s.alt} style={`--w:${s.w};${s.y ? `--y:${s.y}` : ''}`} /></li>
-            ))}
-          </ul>
-          <p class="p-sk p-sk2">Organizer</p>
-          <p class="p-by">{SITE.organizer}</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Only exists to give the page scroll height for the animation -->
-  <div class="track h-[509.4vh]"></div>
-
-  <!-- Heading beside the big circle after zoom-out -->
-  <div class="hero-label pointer-events-none fixed left-0 top-0 z-20 text-paper opacity-0 will-change-[transform,opacity] [text-shadow:0_0_0.5em_rgb(0_0_0/0.6)]" id="heroLabel">
-    <h2 class="m-0 whitespace-nowrap font-semibold leading-[1.05] tracking-[-0.02em]">World Investment<br />Competition 2026</h2>
-    <p class="mt-[0.55em] text-base text-paper/75">The Investment Olympics.</p>
-  </div>
-
-  <!-- One heading + blurb per small circle; the script positions them every frame -->
-  <div id="sections">
-    {NAV.map((item) => (
-      <section class="sec" data-slug={item.slug}>
-        <div class="title pointer-events-none fixed left-0 top-0 z-20 origin-top-left text-paper opacity-0 will-change-[transform,opacity] [text-shadow:0_0_0.4em_rgb(0_0_0/0.35)]">
-          <h2 class="m-0 text-[1em] font-semibold leading-[1.02] tracking-[-0.02em]">{item.label}</h2>
-        </div>
-        <div class="note pointer-events-none fixed left-0 top-0 z-20 opacity-0 will-change-[transform,opacity]">
-          {item.slug === 'divisions' && <>
-            <p class={blurbClass}><b>Trader</b> — teams of three, each member trading their own $1M account.</p>
-            <p class={blurbClass}><b>AI Agent</b> — teams of one to three build an agent that trades by itself.</p>
-            <p class={blurbClass}>You can enter both.</p>
-          </>}
-          {item.slug === 'rules' && <>
-            <p class={blurbClass}>Nasdaq stocks, ETFs and options on a demo account, with leverage and short selling.</p>
-            <p class={blurbClass}>Fall <b>20% from your peak</b> and you are out.</p>
-          </>}
-          {item.slug === 'scoring' && <>
-            <p class={blurbClass}>Returns count for <b>70%</b>, your investment report for <b>30%</b>. Reports are scored by external judges.</p>
-            <p class={blurbClass}>The top teams in each division and the best individual trader share <b>$10,000</b> in prizes.</p>
-          </>}
-          {item.slug === 'schedule' && (
-            <dl class="m-0 grid grid-cols-[max-content_1fr] gap-x-[0.9em] gap-y-[0.3em] text-[0.86rem] leading-[1.4] [&_dd]:m-0 [&_dd]:text-muted [&_dt]:font-semibold [&_dt]:text-ink [&_dt]:tabular-nums">
-              <dt>Dec 7</dt><dd>Opening ceremony</dd>
-              <dt>Jan 4</dt><dd>Trading begins</dd>
-              <dt>Feb 1</dt><dd>AI Agent trading begins</dd>
-              <dt>Mar 25</dt><dd>Trading ends</dd>
-              <dt>Mar 31</dt><dd>Reports due</dd>
-            </dl>
-          )}
-          {item.slug === 'past' && <>
-            <p class={blurbClass}>Last year, <b>16 universities from 9 countries</b> took part.</p>
-            <p class={blurbClass}>See the full results and the winning teams of WIC2025 and WIC2024.</p>
-          </>}
-          <a class={moreClass} href={item.href}>Read more <span aria-hidden="true">→</span></a>
-        </div>
-      </section>
-    ))}
-  </div>
-
-  <p class="fixed inset-0 hidden place-items-center p-8 text-center" id="error">This browser does not support WebGL, so the animation cannot be shown.</p>
+  <Landing client:load />
 </Base>
-
-<script>
-  import { startHero } from '../scripts/hero';
-  const canvas = document.getElementById('gl') as HTMLCanvasElement;
-  const hero = startHero(canvas, JSON.parse(canvas.dataset.photos ?? '[]'));
-  document.querySelector('[data-brand]')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    hero?.toTop();
-  });
-</script>
-
-<style>
-  /*
-   * The poster is typeset in `em` against three custom properties the script
-   * sets per viewport (--b base size, --t title size, --ps facts scale) and
-   * is then transformed + clipped every frame. That rig is kept as plain CSS
-   * here; everything static on the page uses Tailwind utilities.
-   */
-  .poster {
-    --black: #0c0b0b;
-    --paper: #f5f0ea;
-    position: fixed; top: 0; left: 0; z-index: 10;
-    overflow: hidden;
-    background: var(--black);
-    color: var(--paper);
-    transform-origin: 0 0;
-    will-change: transform, clip-path;
-    pointer-events: none;
-  }
-  .poster::after {              /* paper grain, static */
-    content: ""; position: absolute; inset: 0; pointer-events: none;
-    opacity: var(--grain, 0.22); mix-blend-mode: overlay;
-    background-size: var(--gs, 220px); background-image: var(--noise);
-  }
-  .poster.live { pointer-events: auto; }
-  .p-dim { position: absolute; inset: 0; z-index: 3; background: #000; opacity: 0; pointer-events: none; }   /* zoom-out dimming, compositor-only */
-  .p-in { position: relative; height: 100%; display: flex; flex-direction: column; font-size: var(--b, 16px); }
-
-  /* Top half: photo with the (visually hidden) title */
-  .p-stage {
-    position: relative; flex: 0 0 50%;
-    display: flex; flex-direction: column; justify-content: space-between;
-    padding: calc(env(safe-area-inset-top, 0px) + 3.6em) 1.6em 1.3em;
-    overflow: hidden; background: #111;
-  }
-  .p-stage img { position: absolute; top: 0; left: 0; width: 100%; height: 118%; object-fit: cover; object-position: 50% 0%; }
-  .p-stage::before {            /* shade so the header reads over the photo; fades to black at the bottom */
-    content: ""; position: absolute; inset: 0; z-index: 1;
-    background: linear-gradient(to bottom,
-      rgb(0 0 0 / 0.78) 0%, rgb(0 0 0 / 0.35) 38%, rgb(0 0 0 / 0) 58%,
-      rgb(0 0 0 / 0) 72%, rgb(12 11 11 / 0.75) 90%, #0c0b0b 100%);
-  }
-  .p-titles { position: relative; z-index: 2; }
-  .p-title {
-    display: inline-block; margin: 0;
-    font-weight: 900; font-size: var(--t, 5em); line-height: 0.95; letter-spacing: -0.025em;
-    text-transform: uppercase; white-space: nowrap;
-  }
-  .p-title > span { display: block; }
-  /* The title is measured for sizing but kept out of view (the logo carries the name) */
-  .p-titles .p-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-
-  /* Bottom half: key facts, set like a printed notice (white and grey only) */
-  .p-panel { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; font-size: calc(var(--ps, 1) * 1em); background: var(--black); color: #f2f2f2; }
-  .p-facts { flex: 1 1 0; min-height: 0; padding: 0.4em 1.6em 0.9em; display: flex; flex-direction: column; justify-content: space-between; gap: 0.6em; }
-  .p-lead { margin: 0; font-size: 0.8em; line-height: 1.45; color: rgb(242 242 242 / 0.92); text-wrap: pretty; }
-  .p-stats { display: grid; grid-template-columns: 1fr 1fr 1.25fr; column-gap: 0.8em; border-top: 1px solid rgb(242 242 242 / 0.16); padding: 0.75em 0; }
-  .p-stat .n { display: block; font-size: 1.55em; font-weight: 700; letter-spacing: -0.03em; line-height: 1.05; white-space: nowrap; }
-  .p-stat .l { display: block; font-size: 0.78em; font-weight: 600; margin-top: 0.15em; }
-  .p-stat .s { display: block; font-size: 0.72em; color: rgb(242 242 242 / 0.6); margin-top: 0.2em; line-height: 1.3; }
-  .p-divs { display: grid; grid-template-columns: 1fr 1fr; column-gap: 0.8em; border-top: 1px solid rgb(242 242 242 / 0.16); padding: 0.75em 0 0.6em; margin-top: -0.6em; }
-  .p-dv .n { display: block; font-size: 1.05em; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
-  .p-dv .l { display: block; font-size: 0.78em; font-weight: 600; margin-top: 0.15em; }
-  .p-dv .s { display: block; font-size: 0.72em; color: rgb(242 242 242 / 0.6); margin-top: 0.2em; }
-
-  /* White strip: sponsors and organizer. Not affected by the facts scale. */
-  .p-strip { background: #f6f5f2; color: #1d1b1b; font-size: var(--b, 16px); padding: 0.9em 1.6em calc(env(safe-area-inset-bottom, 0px) + 0.85em); }
-  .p-spons { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); align-items: center; justify-items: center; gap: 0.7em 1em; }
-  .p-spons li { min-width: 0; }
-  .p-spons li:nth-child(-n+3) { grid-column: span 2; }
-  .p-spons li:nth-child(n+4) { grid-column: span 3; }
-  .p-spons img { display: block; width: calc(var(--w, 5) * 0.92em); max-width: 100%; height: auto; transform: translateY(var(--y, 0)); }
-  .p-sk { margin: 0 0 0.6em; display: flex; align-items: center; gap: 0.8em; font-size: 0.64em; font-weight: 600; color: #000; white-space: nowrap; }
-  .p-sk::before, .p-sk::after { content: ""; flex: 1; height: 1px; background: rgb(0 0 0 / 0.25); }
-  .p-sk2 { margin-top: 0.9em; }
-  .p-by { margin: 0.35em 0 0; text-align: center; font-size: 0.62em; color: #000; }
-  @media (min-width: 640px) {
-    .p-spons { display: flex; justify-content: space-between; gap: 0.8em 2em; max-width: 720px; margin-left: auto; margin-right: auto; }
-  }
-
-  /* Landscape viewports: same stacking, wider measure */
-  .poster.wide .p-stage img { height: 100%; object-position: 50% 62%; }
-  .poster.wide .p-stage { padding: calc(env(safe-area-inset-top, 0px) + 4.2em) 2.6em 1.6em; }
-  .poster.wide .p-facts { display: grid; grid-template-columns: 1.1fr 1.4fr; grid-template-rows: auto auto; column-gap: 3em; align-content: center; padding: 0.6em 2.6em 1em; }
-  .poster.wide .p-lead { font-size: 0.95em; max-width: 24em; grid-row: 1 / span 2; align-self: center; }
-  .poster.wide .p-stats { border: 0; padding: 0; column-gap: 2em; }
-  .poster.wide .p-stat .n { font-size: 2em; }
-  .poster.wide .p-divs { grid-column: 2; grid-template-columns: 1fr 1fr 1.25fr; column-gap: 2em; padding: 0.7em 0 0; margin-top: 0.6em; }
-  .poster.wide .p-strip { padding: 0.95em 2.6em; }
-  .poster.wide .p-strip > * { max-width: 720px; margin-left: auto; margin-right: auto; }
-  .poster.wide .p-spons { display: flex; justify-content: space-between; gap: 0.8em 2em; max-width: 720px; }
-</style>

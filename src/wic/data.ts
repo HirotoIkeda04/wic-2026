@@ -9,6 +9,8 @@ export const SITE = {
   coHost: 'Waseda AI Society',
   officialUrl: 'https://jpsi-association.com/wic',
   guideDate: 'October 5, 2026',
+  /** First sentence of the description; shown on the poster */
+  lead: 'University teams from around the world compete in U.S. stock demo trading, ranked on both returns and investment reports.',
   legal:
     "JPSI's activities are for student investment education and do not recommend buying or selling any financial product. © JPSI",
   /* Placeholders until the official channels are published */
@@ -44,3 +46,23 @@ export const SCHEDULE: { date: string; tbc?: boolean; event: string; note?: stri
   { date: 'Mar 26 – 31', event: 'Reports due', note: 'Trader: final report. AI Agent: post-report and logs.' },
   { date: 'Apr 22', tbc: true, event: 'Closing and awards ceremony', note: 'In person in Tokyo, with online participation available.' },
 ];
+
+/** Image paths under public/. Photos for the five circles are keyed by NAV slug. */
+const IMG = '/images/wic/2026';
+export const WIC_IMAGES = {
+  hero: `${IMG}/hero.jpg`,
+  circles: {
+    divisions: `${IMG}/divisions.jpg`,
+    rules: `${IMG}/rules.jpg`,
+    scoring: `${IMG}/scoring.jpg`,
+    schedule: `${IMG}/schedule.jpg`,
+    past: `${IMG}/past.jpg`,
+  } as Record<string, string>,
+  logos: {
+    ibkr: `${IMG}/logo-ibkr.png`,
+    tradingview: `${IMG}/logo-tradingview.png`,
+    webull: `${IMG}/logo-webull.png`,
+    okayasu: `${IMG}/logo-okayasu.png`,
+    nsj: `${IMG}/logo-nsj.png`,
+  },
+};

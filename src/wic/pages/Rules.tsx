@@ -1,0 +1,81 @@
+import { Callout } from "../Callout";
+import type { DetailMeta } from "../DetailPage";
+
+export const meta: DetailMeta = {
+  slug: "rules",
+  title: "Rules",
+  lead: "What you can trade, how much leverage you get, and what gets a team disqualified.",
+};
+
+/** Body of the Rules page; rendered inside <DetailPage {...meta}>. */
+export default function Rules() {
+  return (
+    <>
+<h2>Eligibility and entry</h2>
+<ul>
+<li>Open to undergraduate and graduate students. Entry is free.</li>
+<li>One team per club or society per division; one team per person per division. The same person may enter both divisions.</li>
+<li>Apply through the entry form, separately for each division. Entries open <b>Oct 15, 2026</b>.</li>
+</ul>
+<h3>To be eligible for awards</h3>
+<ul>
+<li>At least one team member attends both the opening and closing ceremonies (online attendance is fine).</li>
+<li>Submit the final report (AI Agent division: post-report and logs) by the deadline.</li>
+</ul>
+<h3>Communication</h3>
+<p>All official announcements, including weekly rankings and schedule changes, are made in the WhatsApp group. Every member should join and check it regularly.</p>
+
+<h2>Trading rules</h2>
+<ul>
+<li><b>Accounts</b> — Interactive Brokers demo accounts provided by the organizers, $1M each, with real-time market data.</li>
+<li><b>Instruments</b> — Nasdaq-listed stocks and ETFs, and options on them. Margin buying and short selling are allowed.</li>
+<li><b>Leverage</b> — up to 4x intraday, up to 2x overnight, up to 2x for short positions. See <a href="#margin">margin and forced liquidation</a> below.</li>
+</ul>
+
+<h2>Disqualification</h2>
+<h3>Maximum drawdown of 20%</h3>
+<p>At the regular close of each trading day, if an account's net liquidation value is 20% or more below its highest value so far, that account is disqualified. The starting $1M counts as a peak. The check is per account: in the Trader division, if any one of the three members hits the limit, the whole team is out.</p>
+<Callout>
+<p><b>Example: disqualified while still above the starting value</b></p>
+<p>Start $1.00M → peak $1.30M → one day's close $1.04M.<br />Drawdown from peak = (1.30 − 1.04) ÷ 1.30 = 20%. Disqualified, even though the account is above $1M.</p>
+</Callout>
+<h3>Prohibited conduct</h3>
+<p>Any of the following, once confirmed by the organizers, means immediate disqualification and loss of all award eligibility:</p>
+<ul>
+<li><b>Market manipulation</b> — moving prices with real money or with coordinated trades by third parties in order to profit in the demo account.</li>
+<li><b>Exploiting the demo environment</b> — profiting from price-feed delays or from fills that would not happen in the real market.</li>
+<li>Anything else that undermines the fairness of the competition.</li>
+</ul>
+
+<h2>Publication of results and reports</h2>
+<ul>
+<li>Results are published on the official site: team rankings with team and university names, and the top 10 individuals in the Trader division with name and university.</li>
+<li>Reports are read by the judges, sponsors and organizers. Winning teams' reports are published only if the team agreed to it on the entry form. Consent is optional and does not affect judging or eligibility.</li>
+</ul>
+
+<h2 id="margin">Margin and forced liquidation</h2>
+<p>Competition accounts are Reg T margin accounts, so leverage and short selling are possible. If your account falls below the required margin, positions are closed automatically and without warning. There is no margin call by phone or email.</p>
+<div className="tbl-wrap"><table>
+<thead><tr><th></th><th>Intraday</th><th>Overnight</th></tr></thead>
+<tbody>
+<tr><th>Long</th><td>25% margin (up to 4x)</td><td>50% margin (up to 2x)</td></tr>
+<tr><th>Short</th><td>Capped at 2x</td><td>50% margin (up to 2x)</td></tr>
+</tbody></table></div>
+<h3>Two ways positions get liquidated</h3>
+<ul>
+<li><b>Falling below maintenance margin</b> — if equity drops below the requirement, positions can be closed immediately, even during the session.</li>
+<li><b>The 15:50 ET check</b> — every trading day at this time, accounts are checked against the overnight requirement and any shortfall is liquidated.</li>
+</ul>
+<Callout>
+<p><b>Example 1.</b> A $1M account buys $3M of stock intraday. That needs $750k (25%), so it is fine during the day, but holding overnight needs $1.5M (50%). Unless you reduce the position by $1M before 15:50 ET, it is liquidated automatically.</p>
+<p><b>Example 2.</b> A $1M account buys $2M of stock and the price falls 40%. The position is now worth $1.2M and equity is $0.2M, below the $0.3M (25%) intraday requirement, so it is liquidated.</p>
+</Callout>
+<h3>Things to know</h3>
+<ul>
+<li>A negative cash balance is normal when you use leverage; it shows the borrowed amount.</li>
+<li>Proceeds from short sales are held as collateral and cannot be used freely.</li>
+<li>Shorts approach liquidation faster than longs: when the price rises, both the loss and the margin requirement grow at the same time.</li>
+</ul>
+    </>
+  );
+}
