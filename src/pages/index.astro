@@ -148,10 +148,10 @@ const moreClass = 'pointer-events-auto mt-[0.9em] inline-flex items-center gap-2
 <script>
   import { startHero } from '../scripts/hero';
   const canvas = document.getElementById('gl') as HTMLCanvasElement;
-  startHero(canvas, JSON.parse(canvas.dataset.photos ?? '[]'));
+  const hero = startHero(canvas, JSON.parse(canvas.dataset.photos ?? '[]'));
   document.querySelector('[data-brand]')?.addEventListener('click', (e) => {
     e.preventDefault();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    hero?.toTop();
   });
 </script>
 
@@ -184,7 +184,7 @@ const moreClass = 'pointer-events-auto mt-[0.9em] inline-flex items-center gap-2
 
   /* Top half: photo with the (visually hidden) title */
   .p-stage {
-    position: relative; flex: 0 0 calc(var(--stage-h, 100%) * 0.5);   /* half of the typeset height, so toolbars don't resize the photo */
+    position: relative; flex: 0 0 50%;
     display: flex; flex-direction: column; justify-content: space-between;
     padding: calc(env(safe-area-inset-top, 0px) + 3.6em) 1.6em 1.3em;
     overflow: hidden; background: #111;
@@ -208,7 +208,7 @@ const moreClass = 'pointer-events-auto mt-[0.9em] inline-flex items-center gap-2
 
   /* Bottom half: key facts, set like a printed notice (white and grey only) */
   .p-panel { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; font-size: calc(var(--ps, 1) * 1em); background: var(--black); color: #f2f2f2; }
-  .p-facts { flex: 1 1 0; min-height: 0; padding: 0.4em 1.6em 0.9em; display: flex; flex-direction: column; justify-content: flex-end; gap: 0.6em; }   /* spare height collects under the photo's fade */
+  .p-facts { flex: 1 1 0; min-height: 0; padding: 0.4em 1.6em 0.9em; display: flex; flex-direction: column; justify-content: space-between; gap: 0.6em; }
   .p-lead { margin: 0; font-size: 0.8em; line-height: 1.45; color: rgb(242 242 242 / 0.92); text-wrap: pretty; }
   .p-stats { display: grid; grid-template-columns: 1fr 1fr 1.25fr; column-gap: 0.8em; border-top: 1px solid rgb(242 242 242 / 0.16); padding: 0.75em 0; }
   .p-stat .n { display: block; font-size: 1.55em; font-weight: 700; letter-spacing: -0.03em; line-height: 1.05; white-space: nowrap; }

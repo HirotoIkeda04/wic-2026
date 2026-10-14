@@ -1,12 +1,14 @@
 /**
  * Landing-page animation.
  *
- * The poster always fills the viewport, like a normal fixed element. Mobile
- * browsers change the viewport height when their toolbars collapse; the photo
- * stage and the type keep their typeset size and the facts panel absorbs the
- * difference in the dark fade below the photo (see --stage-h in index.astro).
- * The expensive typesetting only re-runs when the width changes or the
- * viewport gets lower than the typeset height.
+ * Mobile browser chrome: on touch devices the document is held still
+ * (scrollY = 0) while the poster is large, and touch deltas drive the
+ * timeline instead, so the browser's toolbars do not collapse mid-zoom.
+ * Once the zoom-out completes the document is scrolled to the matching
+ * position and native scrolling takes over; scrolling back above that point
+ * re-locks. The whole scene is laid out in a frame of the typeset size,
+ * anchored to the top of the viewport, so a later toolbar collapse only
+ * reveals more background below the scene.
  *
  * A full-screen WebGL fragment shader draws six "metaballs": one large circle
  * holding the poster (rendered as HTML and clipped to the circle) and five
@@ -19,7 +21,8 @@ const VERT = 'attribute vec2 p; void main(){ gl_Position = vec4(p, 0.0, 1.0); }'
 
 const FRAG = /* glsl */ `
 precision highp float;
-uniform vec2 uRes;
+uniform vec2 uRes;         // canvas size (device px)
+uniform vec2 uFrame;       // scene frame (device px), anchored to the top of the canvas
 uniform float uK;          // how strongly neighbouring circles merge
 uniform vec3 uBalls[6];    // xy = centre, z = radius (units of the shorter screen side)
 uniform vec3 uBg;
@@ -48,7 +51,7 @@ vec3 ballImage(sampler2D t, vec2 c, vec2 ext, float a, vec2 p){
   return texture2D(t, st).rgb;
 }
 void main(){
-  vec2 uv = (gl_FragCoord.xy - 0.5 * uRes) / min(uRes.x, uRes.y);
+  vec2 uv = (gl_FragCoord.xy - vec2(0.5 * uFrame.x, uRes.y - 0.5 * uFrame.y)) / min(uFrame.x, uFrame.y);
   float d = 1000.0, dmin = 1000.0;
   float di[6];
   for (int i = 0; i < 6; i++) {
@@ -59,7 +62,7 @@ void main(){
   // Nearest circle owns the pixel; weights blend where circles merge.
   float w[6]; float wsum = 0.0;
   for (int i = 0; i < 6; i++) { w[i] = exp(-(di[i] - dmin) / 0.025); wsum += w[i]; }
-  float px = 1.0 / min(uRes.x, uRes.y);
+  float px = 1.0 / min(uFrame.x, uFrame.y);
   float inside = smoothstep(px * 1.2, -px * 1.2, d);
   vec3 img = ballImage(uTex0, uCen0, uExt0, uAsp[0], uv) * uDim0 * w[0]
            + ballImage(uTex1, uBalls[1].xy, vec2(uBalls[1].z), uAsp[1], uv) * w[1]
@@ -96,7 +99,7 @@ const bgOf = () => {
   return [(n >> 16) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
 };
 
-export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
+export function startHero(canvas: HTMLCanvasElement, photos: string[]): { toTop(): void } | undefined {
   const errorEl = document.getElementById('error')!;
   const gl = canvas.getContext('webgl', { antialias: false });
   if (!gl) { errorEl.style.display = 'grid'; return; }
@@ -122,7 +125,7 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
   gl.enableVertexAttribArray(loc);
   gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
   const U = {
-    res: gl.getUniformLocation(prog, 'uRes'), k: gl.getUniformLocation(prog, 'uK'),
+    res: gl.getUniformLocation(prog, 'uRes'), frame: gl.getUniformLocation(prog, 'uFrame'), k: gl.getUniformLocation(prog, 'uK'),
     balls: gl.getUniformLocation(prog, 'uBalls'), bg: gl.getUniformLocation(prog, 'uBg'),
     asp: gl.getUniformLocation(prog, 'uAsp'), ext0: gl.getUniformLocation(prog, 'uExt0'),
     cen0: gl.getUniformLocation(prog, 'uCen0'), dim0: gl.getUniformLocation(prog, 'uDim0'),
@@ -171,20 +174,21 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
   const notes = secs.map((s) => s.querySelector<HTMLElement>('.note')!);
 
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const touchDevice = window.matchMedia('(pointer: coarse)').matches;
   const bg = bgOf();   // read once: getComputedStyle every frame forces a style recalc
   const data = new Float32Array(18);
   let current = 0;
 
-  // Stage = current viewport in CSS px.
+  // Stage = current viewport in CSS px; the scene frame (`typeset`, below) is
+  // the viewport as it was when the poster was typeset.
   const stage = { W: 0, H: 0 };
+  let dpr = 1;
   const resize = () => {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
     const w = Math.round(canvas.clientWidth * dpr), h = Math.round(canvas.clientHeight * dpr);
     if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; gl.viewport(0, 0, w, h); }
     stage.W = canvas.clientWidth;
     stage.H = canvas.clientHeight;
-    const ph = stage.H + 'px';
-    if (poster.style.height !== ph) poster.style.height = ph;
   };
 
   // Poster typesetting: pick a base font size that fits the viewport. Type is
@@ -195,11 +199,13 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
   let lastW = 0, lastH = 0;
   const layoutPoster = () => {
     const W = stage.W, H = stage.H;
-    if (W === lastW && H >= lastH) return;
+    // Touch devices: keep the typeset when the viewport only grows (toolbars
+    // collapsing). Elsewhere any size change re-typesets.
+    if (W === lastW && (touchDevice ? H >= lastH : H === lastH)) return;
     lastW = W; lastH = H; typeset.W = W; typeset.H = H;
     poster.style.width = W + 'px';
     poster.style.height = H + 'px';
-    pIn.style.setProperty('--stage-h', H + 'px');   // photo stage = half of this; extra height goes under the photo
+    pIn.style.setProperty('--stage-h', H + 'px');
     const wide = W > H * 1.05 && W >= 640;
     poster.classList.toggle('wide', wide);
     let b = Math.max(11, Math.min(wide ? Math.min(W / 62, H / 34) : Math.min(W / 22.5, H / 44), wide ? 19 : 24));
@@ -233,7 +239,7 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
   // Scale the poster to the visible part of the big circle and clip it.
   let hlKey = '', secFontPx = 26, hlNeed = 200, hlHeight = 60;
   const placePoster = (rect: number[], bx: number, by: number, br: number, unit: number, zoom: number, shiftT: number, finalShift: number, finalScale: number) => {
-    const W = stage.W, H = stage.H;
+    const W = typeset.W, H = typeset.H;
     const rcx = W / 2 + rect[0]! * unit, rcy = H / 2 - rect[1]! * unit;
     const rw = 2 * rect[2]! * unit, rh = 2 * rect[3]! * unit;
     const s = Math.max(rw / W, rh / H);
@@ -277,11 +283,79 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
     if (poster.classList.contains('live') !== live) poster.classList.toggle('live', live);
   };
 
-  const targetProgress = () => {
-    const el = document.scrollingElement || document.documentElement;
-    const max = trackEl.offsetHeight - (typeset.H || stage.H);   // typeset height keeps this stable while toolbars move
-    return max > 0 ? clamp01(el.scrollTop / max) : 0;
+  // ---- input model ---------------------------------------------------------
+  // Logical position = heroY while locked (document held at scrollY 0),
+  // window.scrollY once unlocked. LOCK_POS is where the zoom-out is complete.
+  const LOCK_POS = 60;
+  const maxScroll = () => trackEl.offsetHeight - (typeset.H || stage.H);
+  const lockEnd = () => (LOCK_POS / TRACK_VH) * maxScroll();
+  let locked = touchDevice;
+  let heroY = 0;
+  let velocity = 0;          // px per ms: touch fling inside the lock, or carried into native scroll
+  let ownY = -1, ownT = 0;   // last position we scrolled to ourselves, and when (ignored by the re-lock check)
+  const logicalY = () => (locked ? heroY : window.scrollY);
+  const targetProgress = () => (maxScroll() > 0 ? clamp01(logicalY() / maxScroll()) : 0);
+  const own = (y: number) => { ownY = y; ownT = performance.now(); };
+  const jumpTo = (y: number) => { if (Math.abs(window.scrollY - y) > 0.5) { own(y); window.scrollTo(0, y); } };
+  const nudgeBy = (dy: number) => { own(window.scrollY + dy); window.scrollBy(0, dy); };
+  const unlock = () => { locked = false; jumpTo(lockEnd()); };
+  const lock = (y: number, v: number) => { locked = true; heroY = Math.min(Math.max(y, 0), lockEnd()); velocity = v; jumpTo(0); };
+  const moveHero = (dy: number) => {
+    heroY += dy;
+    if (heroY >= lockEnd()) { heroY = lockEnd(); unlock(); }
+    else if (heroY <= 0) { heroY = 0; velocity = 0; }
   };
+  const inMenu = (t: EventTarget | null) => !!(t as Element | null)?.closest?.('#nav');
+
+  if (touchDevice) {
+    let touchY = 0, touchT = 0, active = false, carry = false;
+    window.addEventListener('touchstart', (e) => {
+      if (inMenu(e.target)) { active = false; return; }
+      active = true; carry = false; velocity = 0;
+      touchY = e.touches[0]!.clientY; touchT = e.timeStamp;
+    }, { passive: true });
+    window.addEventListener('touchmove', (e) => {
+      if (!active) return;
+      const y = e.touches[0]!.clientY, dt = Math.max(1, e.timeStamp - touchT);
+      const dy = touchY - y;
+      touchY = y; touchT = e.timeStamp;
+      if (locked) {
+        e.preventDefault();
+        moveHero(dy);
+        velocity = dy / dt;
+        if (!locked) carry = true;          // unlocked mid-gesture: keep driving this touch ourselves
+      } else if (carry) {
+        e.preventDefault();
+        nudgeBy(dy);
+        velocity = dy / dt;
+      }
+    }, { passive: false });
+    const end = (e: TouchEvent) => {
+      if (!active) return;
+      active = false;
+      if (e.timeStamp - touchT > 80) velocity = 0;   // finger paused before lifting: no fling
+      if (!locked && !carry) velocity = 0;           // plain native scroll: the browser flings
+      carry = false;
+      if (locked) jumpTo(0);                         // in case the lock's scrollTo was ignored mid-touch
+    };
+    window.addEventListener('touchend', end);
+    window.addEventListener('touchcancel', end);
+    window.addEventListener('wheel', (e) => {       // trackpads on touch devices
+      if (!locked || inMenu(e.target)) return;
+      e.preventDefault();
+      moveHero(e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? typeset.H : 1));
+    }, { passive: false });
+
+    // Native scrolling back up past the lock point hands control back to the lock.
+    let prevY = 0, prevT = 0;
+    window.addEventListener('scroll', (e) => {
+      const y = window.scrollY, t = e.timeStamp;
+      if (Math.abs(y - ownY) < 1 || performance.now() - ownT < 40) { prevY = y; prevT = t; return; }   // our own scroll
+      const v = prevT ? (y - prevY) / Math.max(1, t - prevT) : 0;
+      prevY = y; prevT = t;
+      if (!locked && y < lockEnd() - 1) lock(y, Math.min(0, v));
+    }, { passive: true });
+  }
 
   // ?debug shows live numbers in the corner (used to diagnose device issues)
   const debugEl = /[?&]debug/.test(location.search) ? document.body.appendChild(document.createElement('pre')) : null;
@@ -291,10 +365,17 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
 
   const frame = (ms: number) => {
     resize();
+    layoutPoster();
     const t = reduceMotion ? 0 : ms / 1000;
     // Ease toward the scroll position with a fixed time constant, so the lag
     // is the same at 15 fps (phones mid-gesture) as at 60 fps.
     const dt = lastMs ? Math.min(ms - lastMs, 100) : 16.7; lastMs = ms; frames++;
+    if (Math.abs(velocity) > 0.005) {            // fling with friction (locked, or carried past the lock)
+      if (locked) moveHero(velocity * dt);
+      else nudgeBy(velocity * dt);
+      velocity *= Math.pow(0.94, dt / 16.7);
+      if (Math.abs(velocity) <= 0.005) velocity = 0;
+    }
     current += (targetProgress() - current) * (1 - Math.pow(0.92, dt / 16.7));
     if (debugEl) {
       if (dt > worstDt) worstDt = dt;
@@ -303,23 +384,25 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]) {
 scrollY ${window.scrollY.toFixed(0)}  scrollTop ${el.scrollTop.toFixed(0)}  scrollEv ${debugEl.dataset.scrollEv || 0}
 inner ${window.innerWidth}x${window.innerHeight}  vv ${visualViewport?.height.toFixed(0)}@${visualViewport?.offsetTop.toFixed(0)}
 canvas ${canvas.clientWidth}x${canvas.clientHeight}  stage ${stage.W}x${stage.H}  typeset ${typeset.W}x${typeset.H}
-progress ${targetProgress().toFixed(3)}  current ${current.toFixed(3)}  max ${(trackEl.offsetHeight - (typeset.H || stage.H)).toFixed(0)}`;
+progress ${targetProgress().toFixed(3)}  current ${current.toFixed(3)}  max ${maxScroll().toFixed(0)}
+${locked ? 'LOCKED' : 'native'}  heroY ${heroY.toFixed(0)}  lockEnd ${lockEnd().toFixed(0)}  vel ${velocity.toFixed(3)}`;
     }
 
     const pos = current * TRACK_VH;
     const zoom = Math.pow(3.8, 1 - smooth(Math.min(pos / ZOOM_END, 1)));
     const shiftT = smooth(clamp01((pos - (ALIGN - 8)) / 68));
-    const portrait = stage.W < stage.H;
+    const FW = typeset.W || stage.W, FH = typeset.H || stage.H;   // scene frame
+    const portrait = FW < FH;
     const rowShrink = portrait ? 0.82 : 1;
     const shift = portrait ? 0.5 - RADII[1]! * rowShrink : 0.22;
     const flow = clamp01((pos - ALIGN - ALIGN_LEN) / FLOW_LEN);
     const cu = clamp01((pos - ALIGN) / ALIGN_LEN);
     const vEnd = 2.26 / FLOW_LEN * ALIGN_LEN;
     const camY = smooth(cu) * 1.16 + (cu * cu * cu - cu * cu) * vEnd + 2.26 * flow;
-    const halfH = 0.5 * stage.H / Math.min(stage.W, stage.H);
+    const halfH = 0.5 * FH / Math.min(FW, FH);
     const baseScale = Math.min(1, halfH / 0.8);
     const scale = baseScale * zoom;
-    const unit = Math.min(stage.W, stage.H);
+    const unit = Math.min(FW, FH);
 
     for (let i = 0; i < 6; i++) {
       // Column: poster at the origin, small circles stacked below it.
@@ -336,13 +419,13 @@ progress ${targetProgress().toFixed(3)}  current ${current.toFixed(3)}  max ${(t
     // reads, then the transforms: no layout thrash.
     const labels: { nx: number; ny: number; alpha: number }[] = [];
     for (let i = 1; i < 6; i++) {
-      const nx = stage.W / 2 + data[i * 3]! * unit + data[i * 3 + 2]! * unit + 0.045 * scale * unit;
-      const ny = stage.H / 2 - data[i * 3 + 1]! * unit;
+      const nx = FW / 2 + data[i * 3]! * unit + data[i * 3 + 2]! * unit + 0.045 * scale * unit;
+      const ny = FH / 2 - data[i * 3 + 1]! * unit;
       const show = shiftT * (zoom < 1.01 ? 1 : 0);
-      const focus = 1 - Math.min(Math.abs(ny - stage.H * 0.5) / (ROW_GAP * scale * unit * 0.7), 1);
+      const focus = 1 - Math.min(Math.abs(ny - FH * 0.5) / (ROW_GAP * scale * unit * 0.7), 1);
       const alpha = show * Math.min(1, focus * 1.6);
       const note = notes[i - 1]!, title = titles[i - 1]!;
-      const width = Math.max(90, Math.min(portrait ? 9999 : 24 * 16, stage.W - nx - 18)).toFixed(0) + 'px';
+      const width = Math.max(90, Math.min(portrait ? 9999 : 24 * 16, FW - nx - 18)).toFixed(0) + 'px';
       setStyle(note, 'width', width);
       setStyle(title, 'width', width);
       const fontPx = Math.max(22, data[i * 3 + 2]! * unit * 0.5);
@@ -365,6 +448,7 @@ progress ${targetProgress().toFixed(3)}  current ${current.toFixed(3)}  max ${(t
     }
 
     gl.uniform2f(U.res, canvas.width, canvas.height);
+    gl.uniform2f(U.frame, FW * dpr, FH * dpr);
     gl.uniform1f(U.k, STICKY * scale);
     gl.uniform3fv(U.balls, data);
     gl.uniform3f(U.bg, bg[0]!, bg[1]!, bg[2]!);
@@ -372,8 +456,8 @@ progress ${targetProgress().toFixed(3)}  current ${current.toFixed(3)}  max ${(t
 
     // The poster texture covers the on-screen part of the big circle (the whole
     // screen at 0% scroll), then stays attached to the circle.
-    const minSide = Math.min(stage.W, stage.H);
-    const hx = 0.5 * stage.W / minSide, hy = 0.5 * stage.H / minSide;
+    const minSide = Math.min(FW, FH);
+    const hx = 0.5 * FW / minSide, hy = 0.5 * FH / minSide;
     const bx = data[0]!, by = data[1]!, br = data[2]!;
     let rect: number[];
     if (zoom > 1.0001) {
@@ -385,13 +469,12 @@ progress ${targetProgress().toFixed(3)}  current ${current.toFixed(3)}  max ${(t
     }
     gl.uniform2f(U.cen0, rect[0]!, rect[1]!);
     gl.uniform2f(U.ext0, rect[2]!, rect[3]!);
-    layoutPoster();
     placePoster(rect, bx, by, br, unit, zoom, shiftT, shift, baseScale);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     requestAnimationFrame(frame);
   };
 
-  // Scroll position hand-off with the detail pages via ?y=.
+  // Position hand-off with the detail pages via ?y= (logical position).
   // Only when returning with ?y= do we restore a position, and we stop the
   // moment the user interacts. There is deliberately no scrollTo on `load`:
   // on a phone the images arrive late, so a load-time scrollTo would yank the
@@ -399,7 +482,10 @@ progress ${targetProgress().toFixed(3)}  current ${current.toFixed(3)}  max ${(t
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
   const m = /[?&]y=(\d+)/.exec(location.search);
   const y = m ? Number(m[1]) : 0;
-  if (y > 0) {
+  resize(); layoutPoster();
+  if (touchDevice && y < lockEnd()) { lock(y, 0); current = targetProgress(); }
+  else if (y > 0) {
+    locked = false;
     let interacted = false;
     for (const ev of ['touchstart', 'wheel', 'keydown', 'pointerdown'] as const) {
       window.addEventListener(ev, () => { interacted = true; }, { once: true, passive: true });
@@ -407,7 +493,7 @@ progress ${targetProgress().toFixed(3)}  current ${current.toFixed(3)}  max ${(t
     const t0 = performance.now();
     (function hold() {
       if (interacted) return;
-      if (Math.abs(window.scrollY - y) > 2) { window.scrollTo(0, y); current = targetProgress(); }
+      if (Math.abs(window.scrollY - y) > 2) { jumpTo(y); current = targetProgress(); }
       if (performance.now() - t0 < 700) requestAnimationFrame(hold);
     })();
   }
@@ -415,9 +501,15 @@ progress ${targetProgress().toFixed(3)}  current ${current.toFixed(3)}  max ${(t
   document.addEventListener('click', (e) => {
     const a = (e.target as HTMLElement).closest?.('a[href^="/"]') as HTMLAnchorElement | null;
     const href = a?.getAttribute('href')?.split('?')[0];
-    if (a && href && href !== '/') a.href = href + '?y=' + Math.round(window.scrollY);
+    if (a && href && href !== '/') a.href = href + '?y=' + Math.round(logicalY());
   });
   window.addEventListener('pageshow', (e) => { if (e.persisted) current = targetProgress(); });
 
   requestAnimationFrame(frame);
+  return {
+    toTop() {
+      if (touchDevice) lock(0, 0);
+      else window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+  };
 }
