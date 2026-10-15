@@ -3,7 +3,7 @@
 import { useEffect, useRef, type CSSProperties } from "react";
 import { WicHeader } from "./WicHeader";
 import { WicPage } from "./WicPage";
-import { NAV, SITE, WIC_IMAGES } from "./data";
+import { NAV, WIC_IMAGES } from "./data";
 import { startHero } from "./hero";
 
 const sponsors = [
@@ -19,6 +19,32 @@ const divisions = [
   { name: "Trader division", line: "You trade.", team: "Teams of 3", long: "Each member trades their own $1M demo account in TWS.", href: "/divisions/" },
   { name: "AI Agent division", line: "Your agent trades.", team: "Teams of 1–3", long: "Build an agent that trades by itself, with an LLM in the loop.", href: "/divisions/" },
 ];
+
+/* Candlestick chart watermarked behind the people: a rising random walk from
+   a fixed seed, so every load draws the same chart. Coordinates in viewBox units. */
+const CHART = (() => {
+  const w = 1600, h = 520, n = 46, body = 16, pad = 40;
+  let seed = 20261115;
+  const rand = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 2 ** 32; };
+  const bars: { o: number; c: number; hi: number; lo: number }[] = [];
+  let price = 100;
+  for (let i = 0; i < n; i++) {
+    const o = price;
+    const c = o + (rand() - 0.42) * 7;           // drifts upward
+    const hi = Math.max(o, c) + rand() * 3.5;
+    const lo = Math.min(o, c) - rand() * 3.5;
+    bars.push({ o, c, hi, lo });
+    price = c;
+  }
+  const max = Math.max(...bars.map((b) => b.hi)), min = Math.min(...bars.map((b) => b.lo));
+  const y = (v: number) => pad + (max - v) / (max - min) * (h - 2 * pad);
+  const step = w / n;
+  const candles = bars.map((b, i) => {
+    const top = y(Math.max(b.o, b.c)), bottom = y(Math.min(b.o, b.c));
+    return { x: Math.round(step * (i + 0.5)), up: b.c >= b.o, hi: y(b.hi), lo: y(b.lo), top, h: Math.max(2, bottom - top) };
+  });
+  return { w, h, body, candles };
+})();
 
 /* Photos for the five small circles, in NAV order */
 const photos = NAV.map((n) => WIC_IMAGES.circles[n.slug]);
@@ -113,6 +139,14 @@ export function Landing() {
                 <div><dt className="c-lbl">Trading period</dt><dd className="v">Jan–Mar</dd><dd className="s">2027 · awards on Apr 22</dd></div>
               </dl>
               <div className="c-scene">
+                <svg className="c-candles" viewBox={`0 0 ${CHART.w} ${CHART.h}`} preserveAspectRatio="none" aria-hidden="true">
+                  {CHART.candles.map((c) => (
+                    <g key={c.x} className={c.up ? "up" : "down"}>
+                      <line x1={c.x} x2={c.x} y1={c.hi} y2={c.lo} />
+                      <rect x={c.x - CHART.body / 2} y={c.top} width={CHART.body} height={c.h} />
+                    </g>
+                  ))}
+                </svg>
                 <img
                   className="c-people"
                   src={WIC_IMAGES.people}
@@ -147,7 +181,6 @@ export function Landing() {
                 ))}
               </ul>
             </div>
-            <div className="c-org"><span className="c-zab">Organizer</span><p className="c-by">{SITE.organizer}</p></div>
           </div>
           <div className="p-dim" id="pDim" aria-hidden="true" />
         </div>
