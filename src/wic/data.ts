@@ -51,6 +51,8 @@ export const SCHEDULE: { date: string; tbc?: boolean; event: string; note?: stri
 const IMG = '/images/wic/2026';
 export const WIC_IMAGES = {
   hero: `${IMG}/hero.jpg`,
+  /** The ceremony photo cut out to the people (transparent background), for the poster */
+  people: `${IMG}/people.webp`,
   circles: {
     divisions: `${IMG}/divisions.jpg`,
     rules: `${IMG}/rules.jpg`,

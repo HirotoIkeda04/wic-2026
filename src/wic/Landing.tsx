@@ -7,11 +7,17 @@ import { NAV, SITE, WIC_IMAGES } from "./data";
 import { startHero } from "./hero";
 
 const sponsors = [
-  { src: WIC_IMAGES.logos.ibkr, alt: "Interactive Brokers", w: 6.2, y: "-0.16em" },
-  { src: WIC_IMAGES.logos.tradingview, alt: "TradingView", w: 5.3, y: "0.055em" },
-  { src: WIC_IMAGES.logos.webull, alt: "Webull Securities", w: 3.74 },
-  { src: WIC_IMAGES.logos.okayasu, alt: "Okayasu Shoji Co., Ltd.", w: 5.0 },
-  { src: WIC_IMAGES.logos.nsj, alt: "Nihon Securities Journal", w: 4.2 },
+  { src: WIC_IMAGES.logos.ibkr, alt: "Interactive Brokers", pw: 491, ph: 80, w: 6.2, y: "-0.16em" },
+  { src: WIC_IMAGES.logos.tradingview, alt: "TradingView", pw: 1200, ph: 157, w: 5.3, y: "0.055em" },
+  { src: WIC_IMAGES.logos.webull, alt: "Webull Securities", pw: 1200, ph: 225, w: 3.74 },
+  { src: WIC_IMAGES.logos.okayasu, alt: "Okayasu Shoji Co., Ltd.", pw: 508, ph: 99, w: 5.0 },
+  { src: WIC_IMAGES.logos.nsj, alt: "Nihon Securities Journal", pw: 568, ph: 139, w: 4.2 },
+];
+
+/* The two division tiles on the poster; both open the Divisions page */
+const divisions = [
+  { name: "Trader division", line: "You trade.", team: "Teams of 3", long: "Each member trades their own $1M demo account in TWS.", href: "/divisions/" },
+  { name: "AI Agent division", line: "Your agent trades.", team: "Teams of 1–3", long: "Build an agent that trades by itself, with an LLM in the loop.", href: "/divisions/" },
 ];
 
 /* Photos for the five small circles, in NAV order */
@@ -79,49 +85,71 @@ export function Landing() {
       <WicHeader />
       <canvas ref={canvasRef} id="gl" className="fixed inset-0 block h-full w-full" />
 
-      {/* Poster: HTML content clipped to the big circle by the animation */}
+      {/* Poster: HTML content clipped to the big circle by the animation.
+          A printed notice: the key facts and the ceremony photo (cut out to the
+          people) on an orange sheet, two orange division tiles, a white band for
+          the sponsors. The fixed WicHeader sits in the space at the top. */}
       <section className="wic-poster" id="poster" aria-label="World Investment Competition 2026">
         <div className="p-in" id="pIn">
-          <div className="p-stage">
-            <img
-              src={WIC_IMAGES.hero}
-              width={1400}
-              height={934}
-              alt="WIC2025 awards ceremony: judges and sponsors on stage, finalist teams joining on screen"
-              loading="eager"
-              fetchPriority="high"
-            />
-            <div className="p-titles">
-              <h1 className="p-title" id="pTitle"><span>World</span><span>Investment</span><span>Competition</span></h1>
+          <div className="c-sheet">
+            <div className="c-hdr" aria-hidden="true" />
+            <div className="c-top">
+              <div className="c-ttl">
+                <h1 className="c-name">World Investment<br />Competition 2026</h1>
+                <p className="c-sub">The Investment Olympics. University teams.</p>
+              </div>
+              <div className="c-due">
+                <span className="c-lbl">Entries close</span>
+                <div className="c-date">
+                  <span className="num">11.15</span>
+                  <span className="dow" aria-label="Sunday"><span>S</span><span>U</span><span>N</span></span>
+                </div>
+              </div>
+            </div>
+            <div className="c-panel c-paper">
+              <dl className="c-stats">
+                <div><dt className="c-lbl">Entry fee</dt><dd className="v">Free</dd><dd className="s">Undergrad &amp; grad students</dd></div>
+                <div><dt className="c-lbl">Prizes</dt><dd className="v">$10,000</dd><dd className="s">incl. flights to Japan</dd></div>
+                <div><dt className="c-lbl">Trading period</dt><dd className="v">Jan–Mar</dd><dd className="s">2027 · awards on Apr 22</dd></div>
+              </dl>
+              <div className="c-scene">
+                <img
+                  className="c-people"
+                  src={WIC_IMAGES.people}
+                  width={1600}
+                  height={606}
+                  alt="WIC2025 awards ceremony: the winning teams, judges and sponsors"
+                  loading="eager"
+                  fetchPriority="high"
+                />
+              </div>
             </div>
           </div>
-          <div className="p-dim" id="pDim" aria-hidden="true" />
-          <div className="p-panel">
-            <div className="p-facts">
-              <p className="p-lead">{SITE.lead}</p>
-              <div className="p-stats">
-                <div className="p-stat"><span className="n">Free</span><span className="l">to enter</span><span className="s">Undergrad &amp; grad students</span></div>
-                <div className="p-stat"><span className="n">$10,000</span><span className="l">in prizes</span><span className="s">incl. flights to Japan</span></div>
-                <div className="p-stat"><span className="n">Jan–Mar</span><span className="l">2027 trading period</span><span className="s">Entries close [TBC]</span></div>
-              </div>
-              <div className="p-divs">
-                <div className="p-dv"><span className="n">Trader division</span><span className="l">You trade.</span><span className="s">Teams of 3</span></div>
-                <div className="p-dv"><span className="n">AI Agent division</span><span className="l">Your agent trades.</span><span className="s">Teams of 1–3</span></div>
-              </div>
-            </div>
-            <div className="p-strip">
-              <p className="p-sk">2026 Sponsors</p>
-              <ul className="p-spons" aria-label="2026 Sponsors">
+          <nav className="c-tiles" aria-label="Divisions">
+            {divisions.map((d) => (
+              <a className="c-tile c-paper" href={d.href} key={d.name}>
+                <span className="nm">{d.name}</span>
+                <span className="rt">
+                  <span className="tx"><b>{d.line}</b><span>{d.team}</span><span>U.S. stock demo trading</span><span className="long">{d.long}</span></span>
+                  <span className="ar" aria-hidden="true">→</span>
+                </span>
+              </a>
+            ))}
+          </nav>
+          <div className="c-strip">
+            <div className="c-spons-wrap">
+              <span className="c-zab">Sponsors</span>
+              <ul className="c-spons" aria-label="Sponsors">
                 {sponsors.map((s) => (
                   <li key={s.alt}>
-                    <img src={s.src} alt={s.alt} style={{ "--w": s.w, "--y": s.y } as CSSProperties} />
+                    <img src={s.src} alt={s.alt} width={s.pw} height={s.ph} style={{ "--w": s.w, "--y": s.y } as CSSProperties} />
                   </li>
                 ))}
               </ul>
-              <p className="p-sk p-sk2">Organizer</p>
-              <p className="p-by">{SITE.organizer}</p>
             </div>
+            <div className="c-org"><span className="c-zab">Organizer</span><p className="c-by">{SITE.organizer}</p></div>
           </div>
+          <div className="p-dim" id="pDim" aria-hidden="true" />
         </div>
       </section>
 

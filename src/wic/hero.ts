@@ -131,7 +131,7 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]): { toTop(
     cen0: gl.getUniformLocation(prog, 'uCen0'), dim0: gl.getUniformLocation(prog, 'uDim0'),
   };
 
-  // ---- textures: 0 = poster backdrop (plain dark), 1–5 = photos ------------
+  // ---- textures: 0 = poster backdrop (the poster's white page), 1–5 = photos
   const aspects = new Float32Array([1, 1, 1, 1, 1, 1]);
   const texs = Array.from({ length: 6 }, (_, i) => {
     gl.uniform1i(gl.getUniformLocation(prog, 'uTex' + i), i);
@@ -153,7 +153,13 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]): { toTop(
   const dctx = dark.getContext('2d')!;
   dctx.fillStyle = '#0c0b0b';
   dctx.fillRect(0, 0, 4, 4);
-  for (let i = 0; i < 6; i++) setTexture(i, dark);
+  for (let i = 1; i < 6; i++) setTexture(i, dark);
+  const page = document.createElement('canvas');
+  page.width = page.height = 4;
+  const pctx = page.getContext('2d')!;
+  pctx.fillStyle = '#fbfaf7';
+  pctx.fillRect(0, 0, 4, 4);
+  setTexture(0, page);
   photos.forEach((src, j) => {
     const im = new Image();
     im.onload = () => setTexture(j + 1, im);
@@ -163,8 +169,11 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]): { toTop(
   // ---- DOM pieces positioned every frame ---------------------------------
   const poster = document.getElementById('poster')!;
   const pIn = document.getElementById('pIn')!;
-  const pTitle = document.getElementById('pTitle')!;
-  const pFacts = pIn.querySelector<HTMLElement>('.p-facts')!;
+  const pScene = pIn.querySelector<HTMLElement>('.c-scene')!;
+  const pStrip = pIn.querySelector<HTMLElement>('.c-strip')!;
+  const header = document.querySelector<HTMLElement>('.wic-header');
+  const brand = header?.querySelector<HTMLElement>('[data-brand]');
+  let brandX = 0, brandY = 0;   // centre of the header's logo, read once per layout
   const pDim = document.getElementById('pDim')!;
   const heroLabel = document.getElementById('heroLabel')!;
   const heroH2 = heroLabel.querySelector('h2')!;
@@ -191,12 +200,21 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]): { toTop(
     stage.H = canvas.clientHeight;
   };
 
-  // Poster typesetting: pick a base font size that fits the viewport. Type is
-  // set for the smallest height seen (toolbars visible) and kept when mobile
-  // toolbars collapse and the viewport grows; it is redone only when the
-  // width changes or the viewport gets lower than the typeset height.
+  // Poster typesetting: the poster is laid out for the smallest height seen
+  // (toolbars visible) and kept when mobile toolbars collapse and the viewport
+  // grows; it is redone only when the width changes or the viewport gets lower
+  // than the typeset height.
   const typeset = { W: 0, H: 0 };
   let lastW = 0, lastH = 0;
+  // Content height of the sponsor band (its children's extents), which is
+  // centred and so can overflow at both ends.
+  const stripNeed = () => {
+    const kids = Array.from(pStrip.children).filter((el) => el.getClientRects().length);   // skip hidden rows
+    if (!kids.length) return 0;
+    const cs = getComputedStyle(pStrip);
+    return kids[kids.length - 1]!.getBoundingClientRect().bottom - kids[0]!.getBoundingClientRect().top
+      + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+  };
   const layoutPoster = () => {
     const W = stage.W, H = stage.H;
     // Touch devices: keep the typeset when the viewport only grows (toolbars
@@ -208,31 +226,16 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]): { toTop(
     pIn.style.setProperty('--stage-h', H + 'px');
     const wide = W > H * 1.05 && W >= 640;
     poster.classList.toggle('wide', wide);
-    let b = Math.max(11, Math.min(wide ? Math.min(W / 62, H / 34) : Math.min(W / 22.5, H / 44), wide ? 19 : 24));
-    pIn.style.setProperty('--ps', '1');
-    for (let tries = 0; tries < 24; tries++) {
-      pIn.style.setProperty('--b', b + 'px');
-      pIn.style.setProperty('--t', '5em');
-      const avail = (pTitle.parentNode as HTMLElement).clientWidth * (wide ? 0.62 : 1);
-      pIn.style.setProperty('--t', (5 * avail / Math.max(1, pTitle.scrollWidth)).toFixed(3) + 'em');
-      if (pIn.scrollHeight <= H + 1 || b <= 9) break;
-      b *= 0.94;
+    poster.classList.toggle('short', wide && H < 560);   // landscape phones: drop the secondary lines
+    if (brand) { const r = brand.getBoundingClientRect(); brandX = r.left + r.width / 2; brandY = r.top + r.height / 2; }
+    // Scale the type down (--k) until the photo keeps a fair share of the
+    // height and the sponsor band fits: only short viewports need this.
+    let k = 1;
+    for (let tries = 0; tries < 12; tries++) {
+      pIn.style.setProperty('--k', k.toFixed(2));
+      if ((pScene.clientHeight >= H * 0.24 && stripNeed() <= pStrip.clientHeight + 1) || k <= 0.6) break;
+      k -= 0.04;
     }
-    // Shrink the facts until their content fits the panel. Measured from the
-    // children's extents (not scrollHeight), which works whichever way the
-    // panel is justified.
-    const factsOverflow = () => {
-      const cs = getComputedStyle(pFacts);
-      const avail = pFacts.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
-      let top = Infinity, bottom = -Infinity;
-      for (const el of Array.from(pFacts.children)) {
-        const r = el.getBoundingClientRect();
-        top = Math.min(top, r.top); bottom = Math.max(bottom, r.bottom);
-      }
-      return bottom - top - avail;
-    };
-    let ps = 1;
-    while (ps > 0.76 && factsOverflow() > 0.5) { ps -= 0.03; pIn.style.setProperty('--ps', ps.toFixed(2)); }
   };
   document.fonts?.ready.then(() => { lastW = 0; });
 
@@ -245,13 +248,18 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]): { toTop(
     const s = Math.max(rw / W, rh / H);
     const ox = rcx - W * s / 2, oy = rcy - H * s / 2;
     const cx = (W / 2 + bx * unit - ox) / s, cy = (H / 2 - by * unit - oy) / s;
-    const r = br * unit / s;
+    // The poster's page is white, so at the start the clip must reach the
+    // screen corners even where the circle does not (wide windows); it eases
+    // back to the true circle early in the zoom-out.
+    const pcx = W / 2 + bx * unit, pcy = H / 2 - by * unit;
+    const cover = Math.hypot(Math.max(pcx, W - pcx), Math.max(pcy, H - pcy)) + 2;
+    const reach = br * unit + Math.max(0, cover - br * unit) * smooth(clamp01((zoom - 2.6) / 1.2));
+    const r = reach / s;
     setStyle(poster, 'transform', `translate(${ox.toFixed(1)}px,${oy.toFixed(1)}px) scale(${s.toFixed(4)})`);
     setStyle(poster, 'clip-path', `circle(${r.toFixed(1)}px at ${cx.toFixed(1)}px ${cy.toFixed(1)}px)`);
     setStyle(poster, 'visibility', (by - br) * unit > H / 2 ? 'hidden' : 'visible');
 
     // Heading next to the big circle: fades in once the column has shifted left.
-    const pcx = W / 2 + bx * unit, pcy = H / 2 - by * unit;
     const hs = clamp01((shiftT - 0.7) / 0.3);
     const hlShow = (zoom < 1.01 ? 1 : 0) * smooth(hs);
     setStyle(heroLabel, 'opacity', hlShow.toFixed(2));
@@ -276,9 +284,12 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]): { toTop(
     const zp = 1 - Math.log(zoom) / Math.log(3.8);
     const bright = 1 - 0.1 * zp;
     setStyle(pDim, 'opacity', (1 - bright).toFixed(2));
-    setStyle(poster, '--grain', (0.22 + 0.08 * zp).toFixed(2));
-    setStyle(poster, '--gs', (Math.round(220 / s / 8) * 8) + 'px');   // quantised: a changed size repaints the grain
     gl.uniform1f(U.dim0, bright);
+    // The header takes dark ink while the poster's white page is behind its logo.
+    const onPoster = Math.hypot(brandX - pcx, brandY - pcy) < reach;
+    if (header && (header.dataset.on === 'poster') !== onPoster) {
+      if (onPoster) header.dataset.on = 'poster'; else delete header.dataset.on;
+    }
     const live = zoom > 3.3;                       // buttons only clickable when nearly full-screen
     if (poster.classList.contains('live') !== live) poster.classList.toggle('live', live);
   };
