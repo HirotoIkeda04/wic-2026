@@ -37,7 +37,7 @@ export function Hero({ lang }: { lang: WicLang }) {
       <div className="bg-[#0c0b0b]">
         {/* The photo starts at the top, under the header. Phones get a taller
             crop around the stage; wider screens show it at its natural height. */}
-        <div className="relative aspect-[1/1.25] overflow-hidden sm:aspect-auto">
+        <div className="relative aspect-[1/1.05] overflow-hidden sm:aspect-auto">
           <img
             src={WIC_IMAGES.hero.src}
             width={WIC_IMAGES.hero.width}
