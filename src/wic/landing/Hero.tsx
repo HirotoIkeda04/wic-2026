@@ -11,14 +11,15 @@ const sponsors = [
 ];
 
 /**
- * Fades the photo into the black above and below it. The stops follow an
- * eased curve rather than a straight line, so the edge of the fade is not visible.
+ * Darkens the top of the photo a little for the header, and fades its bottom
+ * into the black under it. The stops follow an eased curve rather than a
+ * straight line, so the edge of the fade is not visible.
  */
 const EASE = [1, 0.738, 0.541, 0.382, 0.278, 0.194, 0.126, 0.075, 0.042, 0.021, 0.008, 0.002, 0];
-function fade(from: number, to: number) {
-  return EASE.map((a, i) => `rgb(12 11 11 / ${a}) ${(from + ((to - from) * i) / (EASE.length - 1)).toFixed(1)}%`);
+function fade(from: number, to: number, max = 1) {
+  return EASE.map((a, i) => `rgb(12 11 11 / ${(a * max).toFixed(3)}) ${(from + ((to - from) * i) / (EASE.length - 1)).toFixed(1)}%`);
 }
-const PHOTO_FADE = `linear-gradient(to bottom, ${[...fade(0, 32), ...fade(100, 38).reverse()].join(", ")})`;
+const PHOTO_FADE = `linear-gradient(to bottom, ${[...fade(0, 18, 0.6), ...fade(100, 45).reverse()].join(", ")})`;
 
 /** Rule with a centred caption, as on the printed poster. */
 function StripLabel({ children }: { children: string }) {
@@ -33,9 +34,10 @@ function StripLabel({ children }: { children: string }) {
 export function Hero({ lang }: { lang: WicLang }) {
   return (
     <section className="flex flex-col" aria-label="World Investment Competition 2026">
-      <div className="bg-[#0c0b0b] pt-[calc(env(safe-area-inset-top,0px)+5rem)] sm:pt-28">
-        {/* The photo keeps its full width and natural height; black space above it */}
-        <div className="relative">
+      <div className="bg-[#0c0b0b]">
+        {/* The photo starts at the top, under the header. Phones get a taller
+            crop around the stage; wider screens show it at its natural height. */}
+        <div className="relative aspect-[1/1.25] overflow-hidden sm:aspect-auto">
           <img
             src={WIC_IMAGES.hero.src}
             width={WIC_IMAGES.hero.width}
@@ -43,7 +45,7 @@ export function Hero({ lang }: { lang: WicLang }) {
             alt={pick(lang, "WIC awards ceremony: winners, judges and organizers on stage, with teams joining online on screen", "WICの表彰式。壇上に受賞者・審査員・運営、スクリーンにオンライン参加のチーム")}
             loading="eager"
             fetchPriority="high"
-            className="block h-auto w-full"
+            className="block size-full object-cover object-[58%_0%] sm:h-auto"
           />
           <div aria-hidden="true" className="absolute inset-0" style={{ background: PHOTO_FADE }} />
         </div>
