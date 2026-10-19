@@ -10,6 +10,16 @@ const sponsors = [
   { src: WIC_IMAGES.logos.nsj, alt: "Nihon Securities Journal", w: 4.2 },
 ];
 
+/**
+ * Fades the photo into the black above and below it. The stops follow an
+ * eased curve rather than a straight line, so the edge of the fade is not visible.
+ */
+const EASE = [1, 0.738, 0.541, 0.382, 0.278, 0.194, 0.126, 0.075, 0.042, 0.021, 0.008, 0.002, 0];
+function fade(from: number, to: number) {
+  return EASE.map((a, i) => `rgb(12 11 11 / ${a}) ${(from + ((to - from) * i) / (EASE.length - 1)).toFixed(1)}%`);
+}
+const PHOTO_FADE = `linear-gradient(to bottom, ${[...fade(0, 32), ...fade(100, 38).reverse()].join(", ")})`;
+
 /** Rule with a centred caption, as on the printed poster. */
 function StripLabel({ children }: { children: string }) {
   return (
@@ -22,23 +32,23 @@ function StripLabel({ children }: { children: string }) {
 /** First screen: photo, title, one line of copy, the deadline, and the sponsor strip. */
 export function Hero({ lang }: { lang: WicLang }) {
   return (
-    <section className="flex min-h-[100svh] flex-col" aria-label="World Investment Competition 2026">
-      <div className="relative flex flex-1 flex-col justify-end overflow-hidden bg-[#111] px-5 pb-10 pt-28 sm:px-8 sm:pb-14">
-        <img
-          src={WIC_IMAGES.hero.src}
-          width={WIC_IMAGES.hero.width}
-          height={WIC_IMAGES.hero.height}
-          alt={pick(lang, "WIC awards ceremony: winners, judges and organizers on stage, with teams joining online on screen", "WICの表彰式。壇上に受賞者・審査員・運営、スクリーンにオンライン参加のチーム")}
-          loading="eager"
-          fetchPriority="high"
-          className="absolute inset-0 size-full object-cover object-[50%_30%]"
-        />
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 bg-[linear-gradient(to_bottom,rgb(0_0_0/0.65)_0%,rgb(0_0_0/0.15)_35%,rgb(0_0_0/0.35)_60%,#141414_100%)]"
-        />
-        <div className="relative mx-auto w-full max-w-[72rem] text-[#f2f2f2]">
-          <h1 className="m-0 text-[clamp(2.6rem,9vw,6.5rem)] font-black uppercase leading-[0.92] tracking-[-0.03em]">
+    <section className="flex flex-col" aria-label="World Investment Competition 2026">
+      <div className="bg-[#0c0b0b] pt-[calc(env(safe-area-inset-top,0px)+5rem)] sm:pt-28">
+        {/* The photo keeps its full width and natural height; black space above it */}
+        <div className="relative">
+          <img
+            src={WIC_IMAGES.hero.src}
+            width={WIC_IMAGES.hero.width}
+            height={WIC_IMAGES.hero.height}
+            alt={pick(lang, "WIC awards ceremony: winners, judges and organizers on stage, with teams joining online on screen", "WICの表彰式。壇上に受賞者・審査員・運営、スクリーンにオンライン参加のチーム")}
+            loading="eager"
+            fetchPriority="high"
+            className="block h-auto w-full"
+          />
+          <div aria-hidden="true" className="absolute inset-0" style={{ background: PHOTO_FADE }} />
+        </div>
+        <div className="relative mx-auto w-full max-w-[72rem] px-5 pb-10 text-[#f2f2f2] sm:px-8 sm:pb-14">
+          <h1 className="mx-0 -mt-[1.1em] mb-0 text-[clamp(2.6rem,9vw,6.5rem)] font-black uppercase leading-[0.92] tracking-[-0.03em]">
             World
             <br />
             Investment
