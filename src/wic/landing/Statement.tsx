@@ -1,103 +1,41 @@
-"use client";
-
-import { useEffect, useRef } from "react";
 import { SITE } from "../data";
 import { pick, type WicLang } from "../lang";
+import { PhotoVortex } from "./PhotoVortex";
 
 /**
- * The one-sentence description of the competition, held in the middle of
- * the screen on black while photos from WIC2025 drift past behind it. Each
- * layer moves at its own rate as the page scrolls: the faint backdrop
- * slowest, the photos faster.
+ * The one-sentence description of the competition, in the middle of the
+ * screen, inside a vortex of photos from past editions (PhotoVortex). Trial:
+ * the same four photos repeat around the helix.
  */
 
-type Layer = { src: string; speed: number; className: string };
-
-/**
- * Each photo is a near-square crop about a quarter of the section tall,
- * stacked so that neighbours almost touch; their different speeds open and
- * close the gaps as you scroll.
- * The first one sits above the section by a little less than the parallax
- * pushes it down while the section scrolls in (its speed × the viewport
- * height), so it appears just after the section does.
- */
-const PHOTOS: Layer[] = [
-  { src: "/images/wic/wic2025-closing-ceremony.jpg", speed: 0.28, className: "left-[-4%] top-[-23%] sm:left-[8%]" },
-  { src: "/images/wic/wic2025-champions-lmu.jpg", speed: 0.36, className: "right-[-4%] top-[1%] sm:right-[10%]" },
-  { src: "/images/wic/team-dressed-up.jpg", speed: 0.3, className: "left-[6%] top-[30%] sm:left-[18%]" },
-  { src: "/images/hero-background.jpg", speed: 0.38, className: "right-[2%] top-[59%] sm:right-[16%]" },
+const PHOTOS = [
+  "/images/wic/wic2025-closing-ceremony.jpg",
+  "/images/wic/wic2025-champions-lmu.jpg",
+  "/images/wic/team-dressed-up.jpg",
+  "/images/hero-background.jpg",
 ];
 
-/** The backdrop: a blurred, very dark photo that barely moves. */
-const BACKDROP_SPEED = 0.12;
-
 export function Statement({ lang }: { lang: WicLang }) {
-  const sectionRef = useRef<HTMLElement>(null);
-  const layerRefs = useRef<(HTMLElement | null)[]>([]);
-
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const section = sectionRef.current!;
-    let raf = 0;
-    function update() {
-      raf = 0;
-      const r = section.getBoundingClientRect();
-      const vh = window.innerHeight;
-      // 0 while the section's centre is at the viewport's centre; ±1 a screen away
-      const p = (r.top + r.height / 2 - vh / 2) / vh;
-      layerRefs.current.forEach((el) => {
-        if (!el) return;
-        const speed = Number(el.dataset.speed);
-        el.style.transform = `translate3d(0, ${(p * vh * speed).toFixed(1)}px, 0)`;
-      });
-    }
-    const schedule = () => { if (!raf) raf = requestAnimationFrame(update); };
-    update();
-    window.addEventListener("scroll", schedule, { passive: true });
-    window.addEventListener("resize", schedule);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("scroll", schedule);
-      window.removeEventListener("resize", schedule);
-    };
-  }, []);
-
   return (
-    <section ref={sectionRef} className="relative isolate overflow-clip bg-[#0c0b0b]" aria-label={pick(lang, "About the competition", "大会について")}>
-      {/* Backdrop */}
-      <div
-        ref={(el) => { layerRefs.current[0] = el; }}
-        data-speed={BACKDROP_SPEED}
-        aria-hidden="true"
-        className="absolute inset-[-25%_0] -z-10 bg-cover bg-center opacity-[0.12] blur-2xl will-change-transform"
-        style={{ backgroundImage: "url(/images/wic/wic2025-closing-ceremony.jpg)" }}
-      />
+    <section className="relative isolate overflow-clip bg-[#0c0b0b]" aria-label={pick(lang, "About the competition", "大会について")}>
+      <PhotoVortex photos={PHOTOS} />
 
-      {/* Photos */}
-      {PHOTOS.map((ph, i) => (
-        <div
-          key={ph.src}
-          ref={(el) => { layerRefs.current[i + 1] = el; }}
-          data-speed={ph.speed}
-          aria-hidden="true"
-          className={`absolute -z-10 aspect-[6/5] h-[26%] will-change-transform ${ph.className}`}
-        >
-          <img src={ph.src} alt="" loading="lazy" className="block size-full object-cover brightness-[0.35]" />
-        </div>
-      ))}
-
-      {/* Film grain over the backdrop and photos (--wic-noise in wic.css) */}
+      {/* Darken the middle so the sentence reads over the photos */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 opacity-[0.12] [background-image:var(--wic-noise)] [background-size:180px]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_50%,rgb(12_11_11/0.75),rgb(12_11_11/0)_100%)]"
       />
 
-      <div className="h-[90svh]">
-        <div className="flex h-full items-center justify-center px-6">
-          <p className="m-0 max-w-[22em] text-center text-[clamp(1.15rem,3.6vw,1.9rem)] font-semibold leading-[2] tracking-[-0.01em] text-[#f2f2f2] [text-shadow:0_0_24px_rgb(0_0_0/0.6)] [text-wrap:balance]">
-            {SITE.lead[lang]}
-          </p>
-        </div>
+      {/* Film grain (--wic-noise in wic.css) */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 opacity-[0.12] [background-image:var(--wic-noise)] [background-size:180px]"
+      />
+
+      <div className="relative flex h-[90svh] items-center justify-center px-6">
+        <p className="m-0 max-w-[22em] text-center text-[clamp(1.15rem,3.6vw,1.9rem)] font-semibold leading-[2] tracking-[-0.01em] text-[#f2f2f2] [text-shadow:0_0_24px_rgb(0_0_0/0.6)] [text-wrap:balance]">
+          {SITE.lead[lang]}
+        </p>
       </div>
     </section>
   );
