@@ -30,7 +30,7 @@ function StripLabel({ children }: { children: string }) {
   );
 }
 
-/** First screen: photo, title, one line of copy, the deadline, and the sponsor strip. */
+/** First screen: photo, title, the deadline, and the sponsor strip. */
 export function Hero({ lang }: { lang: WicLang }) {
   return (
     <section className="flex flex-col" aria-label="World Investment Competition 2026">
@@ -57,7 +57,6 @@ export function Hero({ lang }: { lang: WicLang }) {
             <br />
             Competition <span className="font-light">2026</span>
           </h1>
-          <p className="mt-6 max-w-[34em] text-[1.05rem] leading-[1.5] text-[#f2f2f2]/85 [text-wrap:pretty] sm:text-[1.2rem]">{SITE.lead[lang]}</p>
           <p className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[0.95rem]">
             <span className="rounded-full border border-[#f2f2f2]/40 px-4 py-1.5 font-semibold">
               {pick(lang, "Entries close Nov 15", "応募締切 11月15日")}

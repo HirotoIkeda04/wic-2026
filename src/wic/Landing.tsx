@@ -8,6 +8,7 @@ import { LastYear } from "./landing/LastYear";
 import { Prize } from "./landing/Prize";
 import { RulesGlance } from "./landing/RulesGlance";
 import { ScheduleSection } from "./landing/ScheduleSection";
+import { Statement } from "./landing/Statement";
 
 /** Landing page: a plain scrolling page, one section per topic. */
 export function Landing({ lang }: { lang: WicLang }) {
@@ -16,6 +17,7 @@ export function Landing({ lang }: { lang: WicLang }) {
       <WicHeader lang={lang} />
       <main>
         <Hero lang={lang} />
+        <Statement lang={lang} />
         <Prize lang={lang} />
         <LastYear lang={lang} />
         <Divisions lang={lang} />
