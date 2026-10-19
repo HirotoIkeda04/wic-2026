@@ -50,7 +50,7 @@ export function Hero({ lang }: { lang: WicLang }) {
           />
           <div aria-hidden="true" className="absolute inset-0" style={{ background: PHOTO_FADE }} />
         </div>
-        <div className="relative mx-auto w-full max-w-[72rem] px-5 pb-10 text-[#f2f2f2] sm:px-8 sm:pb-14">
+        <div className="relative mx-auto w-full max-w-[72rem] px-5 pb-3 text-[#f2f2f2] sm:px-8 sm:pb-5">
           <h1 className="mx-0 -mt-[1.1em] mb-0 text-[clamp(2.6rem,9vw,6.5rem)] font-black uppercase leading-[0.92] tracking-[-0.03em]">
             World
             <br />
@@ -74,7 +74,7 @@ export function Hero({ lang }: { lang: WicLang }) {
       </div>
 
       {/* 2026 sponsors are not confirmed yet; these are last year's. */}
-      <div className="bg-[#f6f5f2] px-5 py-5 text-[#1d1b1b] sm:px-8">
+      <div className="bg-[#f6f5f2] px-5 pb-5 pt-0 text-[#1d1b1b] sm:px-8">
         {/* Two rows, each a label on the left and its content to the right. The
             sponsor logos sit in equal cells: 3 + 2 on phones, one row of 5 from sm up. */}
         <dl className="mx-auto my-0 grid max-w-[72rem] grid-cols-[auto_1fr] items-center gap-x-5 gap-y-4 sm:gap-x-8 sm:text-[1.2rem]">
