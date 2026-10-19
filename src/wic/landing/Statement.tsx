@@ -14,14 +14,17 @@ import { pick, type WicLang } from "../lang";
 type Layer = { src: string; speed: number; className: string };
 
 /**
- * Each photo is a quarter of the section tall, stacked so that neighbours
+ * Each photo is about a quarter of the section tall, stacked so that neighbours
  * almost touch; their different speeds open and close the gaps as you scroll.
+ * The first one sits above the section by as much as the parallax pushes it
+ * down while the section scrolls in (its speed × the viewport height), so
+ * its top edge meets the section's top edge just as the section appears.
  */
 const PHOTOS: Layer[] = [
-  { src: "/images/wic/wic2025-closing-ceremony.jpg", speed: 0.28, className: "left-[-8%] top-[1%] w-[78%] sm:left-[4%] sm:w-[42%]" },
-  { src: "/images/wic/wic2025-champions-lmu.jpg", speed: 0.36, className: "right-[-10%] top-[26%] w-[66%] sm:right-[6%] sm:w-[30%]" },
-  { src: "/images/wic/wic2025-lmu-japan-trip.jpg", speed: 0.3, className: "left-[-2%] top-[51%] w-[74%] sm:left-[12%] sm:w-[38%]" },
-  { src: "/images/hero-background.jpg", speed: 0.38, className: "right-[-8%] top-[76%] w-[76%] sm:right-[10%] sm:w-[40%]" },
+  { src: "/images/wic/wic2025-closing-ceremony.jpg", speed: 0.28, className: "left-[-8%] top-[-28%] w-[78%] sm:left-[4%] sm:w-[42%]" },
+  { src: "/images/wic/wic2025-champions-lmu.jpg", speed: 0.36, className: "right-[-10%] top-[1%] w-[66%] sm:right-[6%] sm:w-[30%]" },
+  { src: "/images/wic/wic2025-lmu-japan-trip.jpg", speed: 0.3, className: "left-[-2%] top-[30%] w-[74%] sm:left-[12%] sm:w-[38%]" },
+  { src: "/images/hero-background.jpg", speed: 0.38, className: "right-[-8%] top-[59%] w-[76%] sm:right-[10%] sm:w-[40%]" },
 ];
 
 /** The backdrop: a blurred, very dark photo that barely moves. */
@@ -76,14 +79,20 @@ export function Statement({ lang }: { lang: WicLang }) {
           ref={(el) => { layerRefs.current[i + 1] = el; }}
           data-speed={ph.speed}
           aria-hidden="true"
-          className={`absolute -z-10 h-[23%] will-change-transform ${ph.className}`}
+          className={`absolute -z-10 h-[26%] will-change-transform ${ph.className}`}
         >
           <img src={ph.src} alt="" loading="lazy" className="block size-full object-cover brightness-[0.45]" />
         </div>
       ))}
 
-      <div className="h-[150svh]">
-        <div className="sticky top-0 flex h-[100svh] items-center justify-center px-6">
+      {/* Film grain over the backdrop and photos (--wic-noise in wic.css) */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 opacity-[0.2] [background-image:var(--wic-noise)] [background-size:180px]"
+      />
+
+      <div className="h-[100svh]">
+        <div className="flex h-full items-center justify-center px-6">
           <p className="m-0 max-w-[22em] text-center text-[clamp(1.15rem,3.6vw,1.9rem)] font-semibold leading-[2] tracking-[-0.01em] text-[#f2f2f2] [text-shadow:0_0_24px_rgb(0_0_0/0.6)] [text-wrap:balance]">
             {SITE.lead[lang]}
           </p>
