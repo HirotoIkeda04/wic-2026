@@ -88,14 +88,3 @@ html:has(.wic[data-tone="dark"]), body:has(.wic[data-tone="dark"]) { background:
     .formula { @apply font-mono text-[0.95rem] px-4 py-3 border border-wic-line rounded-lg overflow-x-auto; }
   }
 }
-
-/* Status dot of the entry pill (landing/EntryStatus): a slow, soft breath
-   of light rather than a ring that pings outward. */
-@keyframes wic-breathe {
-  0%, 100% { opacity: 0.55; box-shadow: 0 0 0 0 rgb(110 231 168 / 0); }
-  50% { opacity: 1; box-shadow: 0 0 6px 1px rgb(110 231 168 / 0.35); }
-}
-.wic-breathe { animation: wic-breathe 2.8s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) {
-  .wic-breathe { animation: none; opacity: 1; }
-}

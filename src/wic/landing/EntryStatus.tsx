@@ -4,9 +4,8 @@ import { useEffect, useState } from "react";
 import { pick, type WicLang } from "../lang";
 
 /**
- * The entry window as a pill with a status dot after the text: grey before
- * entries open, a softly breathing green dot while they are open (wic-breathe
- * in wic.css), a dim dot once they have closed.
+ * The entry window as a pill whose text follows it: when entries open, when
+ * they close, or that they have closed.
  * The page is static, so the phase is worked out again in the browser.
  */
 
@@ -39,14 +38,8 @@ export function EntryStatus({ lang }: { lang: WicLang }) {
   }[phase];
 
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-[#f2f2f2]/40 px-4 py-1.5 font-semibold">
+    <span className="inline-flex items-center rounded-full border border-[#f2f2f2]/40 px-4 py-1.5 font-semibold">
       {label}
-      <span
-        aria-hidden="true"
-        className={`size-[7px] flex-none rounded-full ${
-          phase === "open" ? "wic-breathe bg-[#6ee7a8]" : phase === "before" ? "bg-[#f2f2f2]/50" : "bg-[#f2f2f2]/25"
-        }`}
-      />
     </span>
   );
 }
