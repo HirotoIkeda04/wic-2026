@@ -1,0 +1,60 @@
+import { wicHref, type WicSlug } from "../data";
+import { pick, type WicLang } from "../lang";
+import { MoreLink, Section } from "./Section";
+
+type Card = { slug: WicSlug; name: string; tagline: string; facts: [string, string][]; note?: string };
+
+export function Divisions({ lang }: { lang: WicLang }) {
+  const cards: Card[] = [
+    {
+      slug: "trader",
+      name: pick(lang, "Trader division", "トレーダー部門"),
+      tagline: pick(lang, "You trade.", "自分で取引する。"),
+      facts: [
+        [pick(lang, "Team", "チーム"), pick(lang, "3 students", "3名")],
+        [pick(lang, "Account", "口座"), pick(lang, "$1M demo account per member", "メンバーごとに100万ドルのデモ口座")],
+        [pick(lang, "Platform", "取引環境"), pick(lang, "Trader Workstation (TWS) with real-time data", "Trader Workstation（TWS）、リアルタイムデータ")],
+        [pick(lang, "Live trading", "本番取引"), pick(lang, "Jan 4 – Mar 25, 2027", "2027年1月4日〜3月25日")],
+      ],
+    },
+    {
+      slug: "ai-agent",
+      name: pick(lang, "AI Agent division", "AIエージェント部門"),
+      tagline: pick(lang, "Your agent trades.", "エージェントが自律的に取引する。"),
+      facts: [
+        [pick(lang, "Team", "チーム"), pick(lang, "1 – 3 students", "1〜3名")],
+        [pick(lang, "Account", "口座"), pick(lang, "One $1M demo account per team", "チームで100万ドルのデモ口座1つ")],
+        [pick(lang, "Agent", "エージェント"), pick(lang, "An LLM in the loop, no human trades. LLM usage paid by the organizers.", "LLMを組み込み、人は取引しない。LLMの利用料は運営が負担。")],
+        [pick(lang, "Live trading", "本番取引"), pick(lang, "Feb 1 – Mar 25, 2027", "2027年2月1日〜3月25日")],
+      ],
+      note: pick(lang, "New in 2026. Up to 15 teams.", "2026年新設。最大15チーム。"),
+    },
+  ];
+  return (
+    <Section id="divisions" title={pick(lang, "Two ways to compete.", "2つの部門。")}>
+      <div className="grid gap-5 md:grid-cols-2">
+        {cards.map((c) => (
+          <article key={c.slug} className="flex flex-col rounded-2xl border border-wic-line bg-wic-ink/[0.03] p-7 sm:p-9">
+            <div className="flex items-baseline justify-between gap-4">
+              <h3 className="m-0 text-[1.6rem] font-semibold tracking-[-0.02em]">{c.name}</h3>
+              {c.note && <span className="whitespace-nowrap rounded-full bg-wic-ink px-3 py-1 text-[0.75rem] font-semibold text-wic-bg">{pick(lang, "New", "新設")}</span>}
+            </div>
+            <p className="m-0 mt-1 text-[1.1rem] text-wic-muted">{c.tagline}</p>
+            <dl className="m-0 mt-7 flex-1 divide-y divide-wic-line border-t border-wic-line">
+              {c.facts.map(([k, v]) => (
+                <div key={k} className="grid grid-cols-[7rem_1fr] gap-4 py-3.5">
+                  <dt className="text-[0.88rem] text-wic-muted">{k}</dt>
+                  <dd className="m-0 text-[0.98rem] leading-[1.45]">{v}</dd>
+                </div>
+              ))}
+            </dl>
+            {c.note && <p className="mb-0 mt-5 text-[0.9rem] text-wic-muted">{c.note}</p>}
+            <div className="mt-7">
+              <MoreLink href={wicHref(lang, c.slug)}>{pick(lang, "Read more", "詳しく見る")}</MoreLink>
+            </div>
+          </article>
+        ))}
+      </div>
+    </Section>
+  );
+}

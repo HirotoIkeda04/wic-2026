@@ -15,7 +15,10 @@ This repository is a portfolio mirror served at <https://wic.ihiro.page>; the of
 
 ```
 src/
-  wic/          copy of jpsi-web components/wic/ (minus Next-only files)
+  wic/          WIC page components (React + Tailwind, no Astro or Next APIs)
+    Landing.tsx   the landing page; its sections live in landing/
+    landing/      Hero, Prize (SlotNumber), LastYear (Globe), Divisions, RulesGlance, ScheduleSection
+    DetailPage.tsx, pages/   the five detail pages (bodies copied from jpsi-web)
     routes.tsx  mirror-only: page trees and head copy without Next's metadata API
     data.ts     JPSI_URL, contact address and root-level wicHref are mirror edits
   pages/        index.astro and [page].astro (one route per NAV slug)
@@ -23,8 +26,9 @@ src/
 public/images/  the images the WIC pages use, copied from jpsi-web
 ```
 
-To resync, copy jpsi-web's `components/wic/` and `public/images/wic/` over these, then
-reapply the mirror edits (`git diff` against the copy shows them).
+The landing page is being redesigned here first (plain scrolling sections, with
+a rolling $10,000 in the prize heading and a Three.js globe of the WIC2025 universities), to be carried back to jpsi-web.
+`scripts/land-dots.mjs` regenerates the globe's land dots (`src/wic/landing/land-dots.json`).
 
 ## Develop
 

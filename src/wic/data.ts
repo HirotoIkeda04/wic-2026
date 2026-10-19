@@ -142,20 +142,13 @@ export const SCHEDULE: { before: ScheduleRow[]; months: ScheduleMonth[]; after: 
   ],
 };
 
-/** Image paths under public/. Illustrations for the five circles are keyed by NAV slug. */
+/** Image paths under public/. */
 const IMG = "/images/wic/2026";
 export const WIC_IMAGES = {
   /** Poster photo; the same one the WIC2025 page used as its hero. */
   hero: { src: "/images/hero-background.jpg", width: 2560, height: 1702 },
   /** WIC2025 awards ceremony, shown on the Past editions page. */
   ceremony2025: `${IMG}/hero.jpg`,
-  circles: {
-    trader: `${IMG}/trader.svg`,
-    "ai-agent": `${IMG}/ai-agent.svg`,
-    rules: `${IMG}/rules.svg`,
-    schedule: `${IMG}/schedule.svg`,
-    past: `${IMG}/past.svg`,
-  } satisfies Record<WicSlug, string>,
   logos: {
     ibkr: `${IMG}/logo-ibkr.png`,
     tradingview: `${IMG}/logo-tradingview.png`,
