@@ -19,7 +19,14 @@ const EASE = [1, 0.738, 0.541, 0.382, 0.278, 0.194, 0.126, 0.075, 0.042, 0.021, 
 function fade(from: number, to: number, max = 1) {
   return EASE.map((a, i) => `rgb(12 11 11 / ${(a * max).toFixed(3)}) ${(from + ((to - from) * i) / (EASE.length - 1)).toFixed(1)}%`);
 }
-const PHOTO_FADE = `linear-gradient(to bottom, ${[...fade(0, 18, 0.6), ...fade(100, 45).reverse()].join(", ")})`;
+/** A light, even shade over the top third of the photo (cosine ease, so it has no visible edge). */
+function topShade(to: number, max: number) {
+  return Array.from({ length: 9 }, (_, i) => {
+    const t = i / 8;
+    return `rgb(12 11 11 / ${(max * (0.5 + 0.5 * Math.cos(Math.PI * t))).toFixed(3)}) ${(to * t).toFixed(1)}%`;
+  });
+}
+const PHOTO_FADE = `linear-gradient(to bottom, ${[...topShade(33.3, 0.5), ...fade(100, 45).reverse()].join(", ")})`;
 
 /** Black into the paper colour of the sponsor strip, eased at both ends (a cosine curve). */
 const STRIP_FADE = `linear-gradient(to bottom, ${Array.from({ length: 17 }, (_, i) => {
