@@ -17,12 +17,12 @@ type Layer = { src: string; speed: number; className: string };
  * Each photo is a near-square crop about a quarter of the section tall,
  * stacked so that neighbours almost touch; their different speeds open and
  * close the gaps as you scroll.
- * The first one sits above the section by as much as the parallax pushes it
- * down while the section scrolls in (its speed × the viewport height), so
- * its top edge meets the section's top edge just as the section appears.
+ * The first one sits above the section by a little less than the parallax
+ * pushes it down while the section scrolls in (its speed × the viewport
+ * height), so it appears just after the section does.
  */
 const PHOTOS: Layer[] = [
-  { src: "/images/wic/wic2025-closing-ceremony.jpg", speed: 0.28, className: "left-[-4%] top-[-28%] sm:left-[8%]" },
+  { src: "/images/wic/wic2025-closing-ceremony.jpg", speed: 0.28, className: "left-[-4%] top-[-23%] sm:left-[8%]" },
   { src: "/images/wic/wic2025-champions-lmu.jpg", speed: 0.36, className: "right-[-4%] top-[1%] sm:right-[10%]" },
   { src: "/images/wic/team-dressed-up.jpg", speed: 0.3, className: "left-[6%] top-[30%] sm:left-[18%]" },
   { src: "/images/hero-background.jpg", speed: 0.38, className: "right-[2%] top-[59%] sm:right-[16%]" },
@@ -92,7 +92,7 @@ export function Statement({ lang }: { lang: WicLang }) {
         className="pointer-events-none absolute inset-0 -z-10 opacity-[0.2] [background-image:var(--wic-noise)] [background-size:180px]"
       />
 
-      <div className="h-[100svh]">
+      <div className="h-[90svh]">
         <div className="flex h-full items-center justify-center px-6">
           <p className="m-0 max-w-[22em] text-center text-[clamp(1.15rem,3.6vw,1.9rem)] font-semibold leading-[2] tracking-[-0.01em] text-[#f2f2f2] [text-shadow:0_0_24px_rgb(0_0_0/0.6)] [text-wrap:balance]">
             {SITE.lead[lang]}
