@@ -1,13 +1,16 @@
 import { wicHref, type WicSlug } from "../data";
 import { pick, type WicLang } from "../lang";
+import { MarketBackdrop } from "./MarketBackdrop";
 import { MoreLink, Section } from "./Section";
 
-type Card = { slug: WicSlug; name: string; tagline: string; facts: [string, string][]; note?: string };
+/** `market`: how the card's band draws the shared price series (see MarketBackdrop). */
+type Card = { slug: WicSlug; market: "chart" | "ascii"; name: string; tagline: string; facts: [string, string][]; note?: string };
 
 export function Divisions({ lang }: { lang: WicLang }) {
   const cards: Card[] = [
     {
       slug: "trader",
+      market: "chart",
       name: pick(lang, "Trader division", "トレーダー部門"),
       tagline: pick(lang, "You trade.", "自分で取引する。"),
       facts: [
@@ -19,6 +22,7 @@ export function Divisions({ lang }: { lang: WicLang }) {
     },
     {
       slug: "ai-agent",
+      market: "ascii",
       name: pick(lang, "AI Agent division", "AIエージェント部門"),
       tagline: pick(lang, "Your agent trades.", "エージェントが自律的に取引する。"),
       facts: [
@@ -34,23 +38,29 @@ export function Divisions({ lang }: { lang: WicLang }) {
     <Section id="divisions" title={pick(lang, "Two ways to compete.", "2つの部門。")}>
       <div className="grid gap-5 md:grid-cols-2">
         {cards.map((c) => (
-          <article key={c.slug} className="flex flex-col rounded-2xl border border-wic-line bg-wic-ink/[0.03] p-7 sm:p-9">
-            <div className="flex items-baseline justify-between gap-4">
-              <h3 className="m-0 text-[1.6rem] font-semibold tracking-[-0.02em]">{c.name}</h3>
-              {c.note && <span className="whitespace-nowrap rounded-full bg-wic-ink px-3 py-1 text-[0.75rem] font-semibold text-wic-bg">{pick(lang, "New", "新設")}</span>}
+          <article key={c.slug} className="flex flex-col overflow-hidden rounded-2xl border border-wic-line bg-wic-ink/[0.03]">
+            {/* The same market, read as a chart (trader) or as characters (agent) */}
+            <div className="relative h-44 border-b border-wic-line sm:h-52">
+              <MarketBackdrop mode={c.market} />
             </div>
-            <p className="m-0 mt-1 text-[1.1rem] text-wic-muted">{c.tagline}</p>
-            <dl className="m-0 mt-7 flex-1 divide-y divide-wic-line border-t border-wic-line">
-              {c.facts.map(([k, v]) => (
-                <div key={k} className="grid grid-cols-[7rem_1fr] gap-4 py-3.5">
-                  <dt className="text-[0.88rem] text-wic-muted">{k}</dt>
-                  <dd className="m-0 text-[0.98rem] leading-[1.45]">{v}</dd>
-                </div>
-              ))}
-            </dl>
-            {c.note && <p className="mb-0 mt-5 text-[0.9rem] text-wic-muted">{c.note}</p>}
-            <div className="mt-7">
-              <MoreLink href={wicHref(lang, c.slug)}>{pick(lang, "Read more", "詳しく見る")}</MoreLink>
+            <div className="flex flex-1 flex-col p-7 sm:p-9">
+              <div className="flex items-baseline justify-between gap-4">
+                <h3 className="m-0 text-[1.6rem] font-semibold tracking-[-0.02em]">{c.name}</h3>
+                {c.note && <span className="whitespace-nowrap rounded-full bg-wic-ink px-3 py-1 text-[0.75rem] font-semibold text-wic-bg">{pick(lang, "New", "新設")}</span>}
+              </div>
+              <p className="m-0 mt-1 text-[1.1rem] text-wic-muted">{c.tagline}</p>
+              <dl className="m-0 mt-7 flex-1 divide-y divide-wic-line border-t border-wic-line">
+                {c.facts.map(([k, v]) => (
+                  <div key={k} className="grid grid-cols-[7rem_1fr] gap-4 py-3.5">
+                    <dt className="text-[0.88rem] text-wic-muted">{k}</dt>
+                    <dd className="m-0 text-[0.98rem] leading-[1.45]">{v}</dd>
+                  </div>
+                ))}
+              </dl>
+              {c.note && <p className="mb-0 mt-5 text-[0.9rem] text-wic-muted">{c.note}</p>}
+              <div className="mt-7">
+                <MoreLink href={wicHref(lang, c.slug)}>{pick(lang, "Read more", "詳しく見る")}</MoreLink>
+              </div>
             </div>
           </article>
         ))}
