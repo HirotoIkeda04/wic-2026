@@ -69,7 +69,7 @@ export function Statement({ lang }: { lang: WicLang }) {
         ref={(el) => { layerRefs.current[0] = el; }}
         data-speed={BACKDROP_SPEED}
         aria-hidden="true"
-        className="absolute inset-[-25%_0] -z-10 bg-cover bg-center opacity-25 blur-2xl will-change-transform"
+        className="absolute inset-[-25%_0] -z-10 bg-cover bg-center opacity-[0.12] blur-2xl will-change-transform"
         style={{ backgroundImage: "url(/images/wic/wic2025-closing-ceremony.jpg)" }}
       />
 
@@ -82,14 +82,14 @@ export function Statement({ lang }: { lang: WicLang }) {
           aria-hidden="true"
           className={`absolute -z-10 aspect-[6/5] h-[26%] will-change-transform ${ph.className}`}
         >
-          <img src={ph.src} alt="" loading="lazy" className="block size-full object-cover brightness-[0.45]" />
+          <img src={ph.src} alt="" loading="lazy" className="block size-full object-cover brightness-[0.35]" />
         </div>
       ))}
 
       {/* Film grain over the backdrop and photos (--wic-noise in wic.css) */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 opacity-[0.2] [background-image:var(--wic-noise)] [background-size:180px]"
+        className="pointer-events-none absolute inset-0 -z-10 opacity-[0.12] [background-image:var(--wic-noise)] [background-size:180px]"
       />
 
       <div className="h-[90svh]">
