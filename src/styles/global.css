@@ -3,6 +3,8 @@
 @import "../wic/wic.css";
 
 @layer base {
+  /* app/wic/layout.tsx sets this from next/font on the JPSI site */
+  :root { --font-inter: "Inter Variable"; }
   html { scroll-padding-top: env(safe-area-inset-top, 0px); }
   body { margin: 0; }
 }

@@ -1,14 +1,11 @@
 /**
  * Landing-page animation.
  *
- * Mobile browser chrome: on touch devices the document is held still
- * (scrollY = 0) while the poster is large, and touch deltas drive the
- * timeline instead, so the browser's toolbars do not collapse mid-zoom.
- * Once the zoom-out completes the document is scrolled to the matching
- * position and native scrolling takes over; scrolling back above that point
- * re-locks. The whole scene is laid out in a frame of the typeset size,
- * anchored to the top of the viewport, so a later toolbar collapse only
- * reveals more background below the scene.
+ * Scrolling is always the browser's own, on touch devices too, so swipes
+ * keep the platform's momentum; the timeline only reads window.scrollY.
+ * Mobile browser chrome: the whole scene is laid out in a frame of the
+ * typeset size, anchored to the top of the viewport, so a toolbar collapse
+ * mid-scroll only reveals more background below the scene.
  *
  * A full-screen WebGL fragment shader draws six "metaballs": one large circle
  * holding the poster (rendered as HTML and clipped to the circle) and five
@@ -82,13 +79,29 @@ const RADII = [0.43, 0.2, 0.2, 0.2, 0.2, 0.2];
 const ORBIT_R = 0.71;   // distance from the poster circle to the first small circle
 const ROW_GAP = 0.64;   // spacing between small circles
 const STICKY = 0.10;    // metaball merge strength
-const TRACK_VH = 409.4; // scroll length (in vh) that drives the timeline
-const ZOOM_END = 58.65; // zoom-out finishes here
-const ALIGN = 60;       // column starts flowing upward here
+const ZOOM_END = 40;    // zoom-out finishes here
+// Column starts flowing upward (and shifting left, from ALIGN + 5) before the
+// zoom-out ends, so the first heading is readable soon after the poster
+// settles instead of after a stretch of scrolling where nothing new appears.
+const ALIGN = 20;
 const ALIGN_LEN = 112.3;
 const FLOW_LEN = 237.1;
+const TRACK_VH = ALIGN + ALIGN_LEN + FLOW_LEN; // timeline length; the constants above are in these units
+/**
+ * Scroll distance (in vh) that plays the whole timeline. Shorter than
+ * TRACK_VH so each wheel step or swipe moves the scene further; at 1:1 the
+ * page needed a fast scroll setting to get anywhere. Landing.tsx sizes the
+ * track as this plus one viewport.
+ */
+export const SCROLL_VH = 192;
 
 const smooth = (u: number) => u * u * (3 - 2 * u);
+/**
+ * Zoom-out easing: ease-out, fastest at the start, so the first wheel step
+ * visibly shrinks the poster (smoothstep barely moves it there), and settling
+ * gently at the end.
+ */
+const zoomEase = (u: number) => u * (2 - u);
 const clamp01 = (v: number) => Math.min(Math.max(v, 0), 1);
 /** Write a style property only when the value actually changes (avoids needless style/layout work). */
 const setStyle = (el: HTMLElement, prop: string, value: string) => { if (el.style.getPropertyValue(prop) !== value) el.style.setProperty(prop, value); };
@@ -99,7 +112,10 @@ const bgOf = () => {
   return [(n >> 16) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
 };
 
-export function startHero(canvas: HTMLCanvasElement, photos: string[]): { toTop(): void } | undefined {
+export function startHero(canvas: HTMLCanvasElement, photos: string[]): { toTop(): void; stop(): void } | undefined {
+  // Every listener and the frame loop end with stop(), so React can unmount the page.
+  const ac = new AbortController();
+  const { signal } = ac;
   const errorEl = document.getElementById('error')!;
   const gl = canvas.getContext('webgl', { antialias: false });
   if (!gl) { errorEl.style.display = 'grid'; return; }
@@ -131,7 +147,7 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]): { toTop(
     cen0: gl.getUniformLocation(prog, 'uCen0'), dim0: gl.getUniformLocation(prog, 'uDim0'),
   };
 
-  // ---- textures: 0 = poster backdrop (the poster's white page), 1–5 = photos
+  // ---- textures: 0 = poster backdrop (plain dark), 1–5 = photos ------------
   const aspects = new Float32Array([1, 1, 1, 1, 1, 1]);
   const texs = Array.from({ length: 6 }, (_, i) => {
     gl.uniform1i(gl.getUniformLocation(prog, 'uTex' + i), i);
@@ -153,13 +169,7 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]): { toTop(
   const dctx = dark.getContext('2d')!;
   dctx.fillStyle = '#0c0b0b';
   dctx.fillRect(0, 0, 4, 4);
-  for (let i = 1; i < 6; i++) setTexture(i, dark);
-  const page = document.createElement('canvas');
-  page.width = page.height = 4;
-  const pctx = page.getContext('2d')!;
-  pctx.fillStyle = '#fbfaf7';
-  pctx.fillRect(0, 0, 4, 4);
-  setTexture(0, page);
+  for (let i = 0; i < 6; i++) setTexture(i, dark);
   photos.forEach((src, j) => {
     const im = new Image();
     im.onload = () => setTexture(j + 1, im);
@@ -169,11 +179,8 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]): { toTop(
   // ---- DOM pieces positioned every frame ---------------------------------
   const poster = document.getElementById('poster')!;
   const pIn = document.getElementById('pIn')!;
-  const pScene = pIn.querySelector<HTMLElement>('.c-scene')!;
-  const pStrip = pIn.querySelector<HTMLElement>('.c-strip')!;
-  const header = document.querySelector<HTMLElement>('.wic-header');
-  const brand = header?.querySelector<HTMLElement>('[data-brand]');
-  let brandX = 0, brandY = 0;   // centre of the header's logo, read once per layout
+  const pTitle = document.getElementById('pTitle')!;
+  const pFacts = pIn.querySelector<HTMLElement>('.p-facts')!;
   const pDim = document.getElementById('pDim')!;
   const heroLabel = document.getElementById('heroLabel')!;
   const heroH2 = heroLabel.querySelector('h2')!;
@@ -200,21 +207,12 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]): { toTop(
     stage.H = canvas.clientHeight;
   };
 
-  // Poster typesetting: the poster is laid out for the smallest height seen
-  // (toolbars visible) and kept when mobile toolbars collapse and the viewport
-  // grows; it is redone only when the width changes or the viewport gets lower
-  // than the typeset height.
+  // Poster typesetting: pick a base font size that fits the viewport. Type is
+  // set for the smallest height seen (toolbars visible) and kept when mobile
+  // toolbars collapse and the viewport grows; it is redone only when the
+  // width changes or the viewport gets lower than the typeset height.
   const typeset = { W: 0, H: 0 };
   let lastW = 0, lastH = 0;
-  // Content height of the sponsor band (its children's extents), which is
-  // centred and so can overflow at both ends.
-  const stripNeed = () => {
-    const kids = Array.from(pStrip.children).filter((el) => el.getClientRects().length);   // skip hidden rows
-    if (!kids.length) return 0;
-    const cs = getComputedStyle(pStrip);
-    return kids[kids.length - 1]!.getBoundingClientRect().bottom - kids[0]!.getBoundingClientRect().top
-      + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
-  };
   const layoutPoster = () => {
     const W = stage.W, H = stage.H;
     // Touch devices: keep the typeset when the viewport only grows (toolbars
@@ -226,16 +224,31 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]): { toTop(
     pIn.style.setProperty('--stage-h', H + 'px');
     const wide = W > H * 1.05 && W >= 640;
     poster.classList.toggle('wide', wide);
-    poster.classList.toggle('short', wide && H < 560);   // landscape phones: drop the secondary lines
-    if (brand) { const r = brand.getBoundingClientRect(); brandX = r.left + r.width / 2; brandY = r.top + r.height / 2; }
-    // Scale the type down (--k) until the photo keeps a fair share of the
-    // height and the sponsor band fits: only short viewports need this.
-    let k = 1;
-    for (let tries = 0; tries < 12; tries++) {
-      pIn.style.setProperty('--k', k.toFixed(2));
-      if ((pScene.clientHeight >= H * 0.24 && stripNeed() <= pStrip.clientHeight + 1) || k <= 0.6) break;
-      k -= 0.04;
+    let b = Math.max(11, Math.min(wide ? Math.min(W / 62, H / 34) : Math.min(W / 22.5, H / 44), wide ? 19 : 24));
+    pIn.style.setProperty('--ps', '1');
+    for (let tries = 0; tries < 24; tries++) {
+      pIn.style.setProperty('--b', b + 'px');
+      pIn.style.setProperty('--t', '5em');
+      const avail = (pTitle.parentNode as HTMLElement).clientWidth * (wide ? 0.62 : 1);
+      pIn.style.setProperty('--t', (5 * avail / Math.max(1, pTitle.scrollWidth)).toFixed(3) + 'em');
+      if (pIn.scrollHeight <= H + 1 || b <= 9) break;
+      b *= 0.94;
     }
+    // Shrink the facts until their content fits the panel. Measured from the
+    // children's extents (not scrollHeight), which works whichever way the
+    // panel is justified.
+    const factsOverflow = () => {
+      const cs = getComputedStyle(pFacts);
+      const avail = pFacts.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      let top = Infinity, bottom = -Infinity;
+      for (const el of Array.from(pFacts.children)) {
+        const r = el.getBoundingClientRect();
+        top = Math.min(top, r.top); bottom = Math.max(bottom, r.bottom);
+      }
+      return bottom - top - avail;
+    };
+    let ps = 1;
+    while (ps > 0.76 && factsOverflow() > 0.5) { ps -= 0.03; pIn.style.setProperty('--ps', ps.toFixed(2)); }
   };
   document.fonts?.ready.then(() => { lastW = 0; });
 
@@ -248,18 +261,13 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]): { toTop(
     const s = Math.max(rw / W, rh / H);
     const ox = rcx - W * s / 2, oy = rcy - H * s / 2;
     const cx = (W / 2 + bx * unit - ox) / s, cy = (H / 2 - by * unit - oy) / s;
-    // The poster's page is white, so at the start the clip must reach the
-    // screen corners even where the circle does not (wide windows); it eases
-    // back to the true circle early in the zoom-out.
-    const pcx = W / 2 + bx * unit, pcy = H / 2 - by * unit;
-    const cover = Math.hypot(Math.max(pcx, W - pcx), Math.max(pcy, H - pcy)) + 2;
-    const reach = br * unit + Math.max(0, cover - br * unit) * smooth(clamp01((zoom - 2.6) / 1.2));
-    const r = reach / s;
+    const r = br * unit / s;
     setStyle(poster, 'transform', `translate(${ox.toFixed(1)}px,${oy.toFixed(1)}px) scale(${s.toFixed(4)})`);
     setStyle(poster, 'clip-path', `circle(${r.toFixed(1)}px at ${cx.toFixed(1)}px ${cy.toFixed(1)}px)`);
     setStyle(poster, 'visibility', (by - br) * unit > H / 2 ? 'hidden' : 'visible');
 
     // Heading next to the big circle: fades in once the column has shifted left.
+    const pcx = W / 2 + bx * unit, pcy = H / 2 - by * unit;
     const hs = clamp01((shiftT - 0.7) / 0.3);
     const hlShow = (zoom < 1.01 ? 1 : 0) * smooth(hs);
     setStyle(heroLabel, 'opacity', hlShow.toFixed(2));
@@ -284,110 +292,36 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]): { toTop(
     const zp = 1 - Math.log(zoom) / Math.log(3.8);
     const bright = 1 - 0.1 * zp;
     setStyle(pDim, 'opacity', (1 - bright).toFixed(2));
+    setStyle(poster, '--grain', (0.22 + 0.08 * zp).toFixed(2));
+    setStyle(poster, '--gs', (Math.round(220 / s / 8) * 8) + 'px');   // quantised: a changed size repaints the grain
     gl.uniform1f(U.dim0, bright);
-    // The header takes dark ink while the poster's white page is behind its logo.
-    const onPoster = Math.hypot(brandX - pcx, brandY - pcy) < reach;
-    if (header && (header.dataset.on === 'poster') !== onPoster) {
-      if (onPoster) header.dataset.on = 'poster'; else delete header.dataset.on;
-    }
     const live = zoom > 3.3;                       // buttons only clickable when nearly full-screen
     if (poster.classList.contains('live') !== live) poster.classList.toggle('live', live);
   };
 
   // ---- input model ---------------------------------------------------------
-  // Logical position = heroY while locked (document held at scrollY 0),
-  // window.scrollY once unlocked. LOCK_POS is where the zoom-out is complete.
-  const LOCK_POS = 60;
   const maxScroll = () => trackEl.offsetHeight - (typeset.H || stage.H);
-  const lockEnd = () => (LOCK_POS / TRACK_VH) * maxScroll();
-  let locked = touchDevice;
-  let heroY = 0;
-  let velocity = 0;          // px per ms: touch fling inside the lock, or carried into native scroll
-  let ownY = -1, ownT = 0;   // last position we scrolled to ourselves, and when (ignored by the re-lock check)
-  const logicalY = () => (locked ? heroY : window.scrollY);
-  const targetProgress = () => (maxScroll() > 0 ? clamp01(logicalY() / maxScroll()) : 0);
-  const own = (y: number) => { ownY = y; ownT = performance.now(); };
-  const jumpTo = (y: number) => { if (Math.abs(window.scrollY - y) > 0.5) { own(y); window.scrollTo(0, y); } };
-  const nudgeBy = (dy: number) => { own(window.scrollY + dy); window.scrollBy(0, dy); };
-  const unlock = () => { locked = false; jumpTo(lockEnd()); };
-  const lock = (y: number, v: number) => { locked = true; heroY = Math.min(Math.max(y, 0), lockEnd()); velocity = v; jumpTo(0); };
-  const moveHero = (dy: number) => {
-    heroY += dy;
-    if (heroY >= lockEnd()) { heroY = lockEnd(); unlock(); }
-    else if (heroY <= 0) { heroY = 0; velocity = 0; }
-  };
-  const inMenu = (t: EventTarget | null) => !!(t as Element | null)?.closest?.('#wic-nav');
-
-  if (touchDevice) {
-    let touchY = 0, touchT = 0, active = false, carry = false;
-    window.addEventListener('touchstart', (e) => {
-      if (inMenu(e.target)) { active = false; return; }
-      active = true; carry = false; velocity = 0;
-      touchY = e.touches[0]!.clientY; touchT = e.timeStamp;
-    }, { passive: true });
-    window.addEventListener('touchmove', (e) => {
-      if (!active) return;
-      const y = e.touches[0]!.clientY, dt = Math.max(1, e.timeStamp - touchT);
-      const dy = touchY - y;
-      touchY = y; touchT = e.timeStamp;
-      if (locked) {
-        e.preventDefault();
-        moveHero(dy);
-        velocity = dy / dt;
-        if (!locked) carry = true;          // unlocked mid-gesture: keep driving this touch ourselves
-      } else if (carry) {
-        e.preventDefault();
-        nudgeBy(dy);
-        velocity = dy / dt;
-      }
-    }, { passive: false });
-    const end = (e: TouchEvent) => {
-      if (!active) return;
-      active = false;
-      if (e.timeStamp - touchT > 80) velocity = 0;   // finger paused before lifting: no fling
-      if (!locked && !carry) velocity = 0;           // plain native scroll: the browser flings
-      carry = false;
-      if (locked) jumpTo(0);                         // in case the lock's scrollTo was ignored mid-touch
-    };
-    window.addEventListener('touchend', end);
-    window.addEventListener('touchcancel', end);
-    window.addEventListener('wheel', (e) => {       // trackpads on touch devices
-      if (!locked || inMenu(e.target)) return;
-      e.preventDefault();
-      moveHero(e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? typeset.H : 1));
-    }, { passive: false });
-
-    // Native scrolling back up past the lock point hands control back to the lock.
-    let prevY = 0, prevT = 0;
-    window.addEventListener('scroll', (e) => {
-      const y = window.scrollY, t = e.timeStamp;
-      if (Math.abs(y - ownY) < 1 || performance.now() - ownT < 40) { prevY = y; prevT = t; return; }   // our own scroll
-      const v = prevT ? (y - prevY) / Math.max(1, t - prevT) : 0;
-      prevY = y; prevT = t;
-      if (!locked && y < lockEnd() - 1) lock(y, Math.min(0, v));
-    }, { passive: true });
-  }
+  const targetProgress = () => (maxScroll() > 0 ? clamp01(window.scrollY / maxScroll()) : 0);
+  // 'instant' keeps the jump in one step even if a stylesheet sets
+  // `scroll-behavior: smooth`.
+  const jumpTo = (y: number) => { if (Math.abs(window.scrollY - y) > 0.5) window.scrollTo({ top: y, behavior: 'instant' }); };
 
   // ?debug shows live numbers in the corner (used to diagnose device issues)
   const debugEl = /[?&]debug/.test(location.search) ? document.body.appendChild(document.createElement('pre')) : null;
   if (debugEl) debugEl.style.cssText = 'position:fixed;left:4px;top:70px;z-index:100;margin:0;padding:4px 6px;font:12px/1.3 ui-monospace,monospace;color:#0f0;background:rgba(0,0,0,.7);pointer-events:none;white-space:pre';
   let frames = 0, lastMs = 0, worstDt = 0;
-  window.addEventListener('scroll', () => { if (debugEl) debugEl.dataset.scrollEv = String((Number(debugEl.dataset.scrollEv) || 0) + 1); }, { passive: true });
+  window.addEventListener('scroll', () => { if (debugEl) debugEl.dataset.scrollEv = String((Number(debugEl.dataset.scrollEv) || 0) + 1); }, { passive: true, signal });
 
   const frame = (ms: number) => {
+    if (signal.aborted) return;   // a frame queued before stop() must not draw with the old program
     resize();
     layoutPoster();
     const t = reduceMotion ? 0 : ms / 1000;
     // Ease toward the scroll position with a fixed time constant, so the lag
-    // is the same at 15 fps (phones mid-gesture) as at 60 fps.
+    // is the same at 15 fps (phones mid-gesture) as at 60 fps. About 0.05 s:
+    // a longer lag makes the scene feel like it resists scrolling.
     const dt = lastMs ? Math.min(ms - lastMs, 100) : 16.7; lastMs = ms; frames++;
-    if (Math.abs(velocity) > 0.005) {            // fling with friction (locked, or carried past the lock)
-      if (locked) moveHero(velocity * dt);
-      else nudgeBy(velocity * dt);
-      velocity *= Math.pow(0.94, dt / 16.7);
-      if (Math.abs(velocity) <= 0.005) velocity = 0;
-    }
-    current += (targetProgress() - current) * (1 - Math.pow(0.92, dt / 16.7));
+    current += (targetProgress() - current) * (1 - Math.pow(0.7, dt / 16.7));
     if (debugEl) {
       if (dt > worstDt) worstDt = dt;
       const el = document.scrollingElement || document.documentElement;
@@ -395,13 +329,12 @@ export function startHero(canvas: HTMLCanvasElement, photos: string[]): { toTop(
 scrollY ${window.scrollY.toFixed(0)}  scrollTop ${el.scrollTop.toFixed(0)}  scrollEv ${debugEl.dataset.scrollEv || 0}
 inner ${window.innerWidth}x${window.innerHeight}  vv ${visualViewport?.height.toFixed(0)}@${visualViewport?.offsetTop.toFixed(0)}
 canvas ${canvas.clientWidth}x${canvas.clientHeight}  stage ${stage.W}x${stage.H}  typeset ${typeset.W}x${typeset.H}
-progress ${targetProgress().toFixed(3)}  current ${current.toFixed(3)}  max ${maxScroll().toFixed(0)}
-${locked ? 'LOCKED' : 'native'}  heroY ${heroY.toFixed(0)}  lockEnd ${lockEnd().toFixed(0)}  vel ${velocity.toFixed(3)}`;
+progress ${targetProgress().toFixed(3)}  current ${current.toFixed(3)}  max ${maxScroll().toFixed(0)}`;
     }
 
     const pos = current * TRACK_VH;
-    const zoom = Math.pow(3.8, 1 - smooth(Math.min(pos / ZOOM_END, 1)));
-    const shiftT = smooth(clamp01((pos - (ALIGN - 8)) / 68));
+    const zoom = Math.pow(3.8, 1 - zoomEase(Math.min(pos / ZOOM_END, 1)));
+    const shiftT = smooth(clamp01((pos - (ALIGN + 5)) / 40));
     const FW = typeset.W || stage.W, FH = typeset.H || stage.H;   // scene frame
     const portrait = FW < FH;
     const rowShrink = portrait ? 0.82 : 1;
@@ -450,7 +383,9 @@ ${locked ? 'LOCKED' : 'native'}  heroY ${heroY.toFixed(0)}  lockEnd ${lockEnd().
       const a = alpha.toFixed(2);
       setStyle(note, 'opacity', a);
       setStyle(title, 'opacity', a);
-      setStyle(note, 'pointer-events', alpha > 0.6 ? 'auto' : 'none');
+      const shown = alpha > 0.6;
+      setStyle(note, 'pointer-events', shown ? 'auto' : 'none');
+      if (note.inert === shown) note.inert = !shown;   // keep Tab off the faded-out Read more links
       if (alpha <= 0 && note.style.transform) continue;   // hidden labels keep their last position
       const gap = 10, tH = title.offsetHeight, nH = note.offsetHeight;
       const top = ny - (tH + gap + nH) / 2;
@@ -485,25 +420,24 @@ ${locked ? 'LOCKED' : 'native'}  heroY ${heroY.toFixed(0)}  lockEnd ${lockEnd().
     requestAnimationFrame(frame);
   };
 
-  // Position hand-off with the detail pages via ?y= (logical position).
+  // Position hand-off with the detail pages via ?y= (scroll position).
   // Only when returning with ?y= do we restore a position, and we stop the
   // moment the user interacts. There is deliberately no scrollTo on `load`:
   // on a phone the images arrive late, so a load-time scrollTo would yank the
   // page back to the top mid-animation.
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  const initialSearch = location.search;
   const m = /[?&]y=(\d+)/.exec(location.search);
   const y = m ? Number(m[1]) : 0;
   resize(); layoutPoster();
-  if (touchDevice && y < lockEnd()) { lock(y, 0); current = targetProgress(); }
-  else if (y > 0) {
-    locked = false;
+  if (y > 0) {
     let interacted = false;
     for (const ev of ['touchstart', 'wheel', 'keydown', 'pointerdown'] as const) {
-      window.addEventListener(ev, () => { interacted = true; }, { once: true, passive: true });
+      window.addEventListener(ev, () => { interacted = true; }, { once: true, passive: true, signal });
     }
     const t0 = performance.now();
     (function hold() {
-      if (interacted) return;
+      if (interacted || signal.aborted) return;
       if (Math.abs(window.scrollY - y) > 2) { jumpTo(y); current = targetProgress(); }
       if (performance.now() - t0 < 700) requestAnimationFrame(hold);
     })();
@@ -512,15 +446,18 @@ ${locked ? 'LOCKED' : 'native'}  heroY ${heroY.toFixed(0)}  lockEnd ${lockEnd().
   document.addEventListener('click', (e) => {
     const a = (e.target as HTMLElement).closest?.('a[href^="/"]') as HTMLAnchorElement | null;
     const href = a?.getAttribute('href')?.split('?')[0];
-    if (a && href && href !== '/') a.href = href + '?y=' + Math.round(logicalY());
-  });
-  window.addEventListener('pageshow', (e) => { if (e.persisted) current = targetProgress(); });
+    if (a && href && href !== '/') a.href = href + '?y=' + Math.round(window.scrollY);
+  }, { signal });
+  window.addEventListener('pageshow', (e) => { if (e.persisted) current = targetProgress(); }, { signal });
 
   requestAnimationFrame(frame);
   return {
-    toTop() {
-      if (touchDevice) lock(0, 0);
-      else window.scrollTo({ top: 0, behavior: 'smooth' });
+    toTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); },
+    stop() {
+      ac.abort();
+      debugEl?.remove();
+      // Put the query back so a remount (React Strict Mode in dev) restores the same spot.
+      if (m && !location.search) { try { history.replaceState(null, '', location.pathname + initialSearch + location.hash); } catch {} }
     },
   };
 }

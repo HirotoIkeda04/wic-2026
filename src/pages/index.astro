@@ -1,32 +1,8 @@
 ---
 import Base from '../layouts/Base.astro';
-import { Landing } from '../wic/Landing';
-import { SITE, WIC_IMAGES } from '../wic/data';
-
-const siteUrl = Astro.site!.toString();
-const jsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'Event',
-  name: 'World Investment Competition 2026',
-  description: SITE.lead,
-  startDate: '2026-12-07',
-  endDate: '2027-04-22',
-  eventAttendanceMode: 'https://schema.org/MixedEventAttendanceMode',
-  eventStatus: 'https://schema.org/EventScheduled',
-  location: [
-    { '@type': 'VirtualLocation', url: siteUrl },
-    { '@type': 'Place', name: 'Waseda University', address: { '@type': 'PostalAddress', addressLocality: 'Tokyo', addressCountry: 'JP' } },
-  ],
-  organizer: { '@type': 'Organization', name: SITE.organizer, url: SITE.organizerUrl },
-  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD', availability: 'https://schema.org/InStock', validFrom: '2026-10-15', url: siteUrl },
-  image: new URL(WIC_IMAGES.hero, Astro.site).toString(),
-  url: siteUrl,
-};
+import { landingHead, WicLanding } from '../wic/routes';
 ---
 
-<Base title={SITE.title} description={SITE.description} ogTitle="World Investment Competition 2026" ogType="website" themeColor="#141414">
-  <Fragment slot="head">
-    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
-  </Fragment>
-  <Landing client:load />
+<Base {...landingHead('en')}>
+  <WicLanding lang="en" client:load />
 </Base>

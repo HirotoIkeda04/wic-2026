@@ -1,0 +1,15 @@
+---
+import Base from '../layouts/Base.astro';
+import type { WicSlug } from '../wic/data';
+import { detailHead, WIC_SLUGS, WicDetail } from '../wic/routes';
+
+export function getStaticPaths() {
+  return WIC_SLUGS.map((page) => ({ params: { page } }));
+}
+
+const page = Astro.params.page as WicSlug;
+---
+
+<Base {...detailHead('en', page)}>
+  <WicDetail lang="en" page={page} client:load />
+</Base>

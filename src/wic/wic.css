@@ -1,7 +1,6 @@
 /*
- * WIC 2026 styles. Import this from the project's main Tailwind stylesheet
- * (the one that has `@import "tailwindcss"`), e.g. `@import "../components/wic/wic.css";`
- * so that the @theme tokens and @apply rules below are processed by Tailwind.
+ * WIC 2026 styles, imported from app/globals.css so that the @theme tokens and
+ * @apply rules below are processed by Tailwind.
  *
  * Pages are either "light" (detail pages) or "dark" (landing). The tone is set
  * with `data-tone` on the page wrapper (see WicPage) and every `wic-*` color
@@ -28,7 +27,8 @@
   --wic-line: rgb(29 27 27 / 0.14);
   --wic-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 1.4 -0.2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   -webkit-text-size-adjust: 100%;
-  font-family: var(--font-wic);
+  /* --font-inter is set by app/wic/layout.tsx, below the root where @theme resolves */
+  font-family: var(--font-inter), var(--font-wic);
   background: var(--wic-bg);
   color: var(--wic-ink);
 }
@@ -38,6 +38,10 @@
   --wic-muted: #9a9a9a;
   --wic-line: rgb(244 242 238 / 0.14);
 }
+/* Mobile Safari paints the strip under its collapsed toolbar, and overscroll,
+   with the root background, which is the site's white: match the WIC tone. */
+html:has(.wic[data-tone="light"]), body:has(.wic[data-tone="light"]) { background: #f6f5f2; }
+html:has(.wic[data-tone="dark"]), body:has(.wic[data-tone="dark"]) { background: #141414; }
 @layer base {
   .wic a { color: inherit; }
   .wic b, .wic strong { font-weight: 600; }
@@ -64,6 +68,7 @@
   .wic-article {
     h2 { @apply mt-11 mb-3.5 text-[1.35rem] font-semibold tracking-[-0.01em]; }
     h3 { @apply mt-7 mb-2 text-[1.05rem] font-semibold; }
+    [id] { scroll-margin-top: 6rem; }   /* clear the fixed header when linked to */
     p { @apply mb-[1em]; }
     ul, ol { @apply mb-[1.2em] pl-[1.3em]; }
     ul { list-style: disc; }
@@ -79,149 +84,92 @@
     thead th { @apply text-wic-muted font-medium text-[0.9rem]; }
     .formula { @apply font-mono text-[0.95rem] px-4 py-3 border border-wic-line rounded-lg overflow-x-auto; }
   }
-  .wic-tbc {
-    @apply inline-block px-[0.45em] py-[0.05em] rounded-[0.3em] text-[0.9em] text-wic-muted border border-dashed border-wic-ink/35;
-  }
 
   /* ---- Landing poster ----------------------------------------------------
-     A printed notice on a white page: an orange paper panel holding the key
-     facts and the ceremony photo cut out to the people, two orange division
-     tiles, then a white band for the sponsors. The animation sizes the poster
-     to the viewport and then transforms + clips it every frame (see hero.ts).
-     Type and vertical spacing are in --r (1rem x --k; hero.ts lowers --k until
-     the poster fits a short viewport); fluid sizes use the poster's width and
-     height (cqw / cqh) so they follow the typeset frame, not the live viewport. */
+     The poster is typeset in `em` against custom properties the animation sets
+     per viewport (--b base size, --t title size, --ps facts scale) and is then
+     transformed + clipped every frame (see hero.ts). */
   .wic-poster {
-    --orange: #e9471c;
-    --ink: #0c0b0b;
-    --page: #fbfaf7;
-    --muted: rgb(12 11 11 / 0.66);
-    --paper-grain: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='g' x='0' y='0'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' seed='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/><feComponentTransfer><feFuncR type='linear' slope='0.45' intercept='0.72'/><feFuncG type='linear' slope='0.45' intercept='0.72'/><feFuncB type='linear' slope='0.45' intercept='0.72'/><feFuncA type='linear' slope='0' intercept='1'/></feComponentTransfer></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
-    --paper-fiber: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='480' height='480'><filter id='f' x='0' y='0'><feTurbulence type='fractalNoise' baseFrequency='0.02 0.6' numOctaves='2' seed='11' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/><feComponentTransfer><feFuncR type='linear' slope='0.22' intercept='0.86'/><feFuncG type='linear' slope='0.22' intercept='0.86'/><feFuncB type='linear' slope='0.22' intercept='0.86'/><feFuncA type='linear' slope='0' intercept='1'/></feComponentTransfer></filter><rect width='100%' height='100%' filter='url(%23f)'/></svg>");
-    --paper-mottle: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='640' height='640'><filter id='m' x='0' y='0'><feTurbulence type='fractalNoise' baseFrequency='0.012' numOctaves='3' seed='8' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/><feComponentTransfer><feFuncR type='linear' slope='0.7' intercept='0.15'/><feFuncG type='linear' slope='0.7' intercept='0.15'/><feFuncB type='linear' slope='0.7' intercept='0.15'/><feFuncA type='linear' slope='0' intercept='1'/></feComponentTransfer></filter><rect width='100%' height='100%' filter='url(%23m)'/></svg>");
+    --black: #0c0b0b;
+    --paper: #f5f0ea;
     position: fixed; top: 0; left: 0; z-index: 10;
     overflow: hidden;
-    background: var(--page);
-    color: var(--ink);
+    background: var(--black);
+    color: var(--paper);
     transform-origin: 0 0;
     will-change: transform, clip-path;
     pointer-events: none;
   }
+  .wic-poster::after {          /* paper grain, static */
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    opacity: var(--grain, 0.22); mix-blend-mode: overlay;
+    background-size: var(--gs, 220px); background-image: var(--wic-noise);
+  }
   .wic-poster.live { pointer-events: auto; }
   .wic-poster .p-dim { position: absolute; inset: 0; z-index: 3; background: #000; opacity: 0; pointer-events: none; }
-  .wic-poster .p-in {
-    --k: 1;
-    --r: calc(1rem * var(--k));
-    --m: 0.6rem;           /* white margin around the sheet */
-    --g: 0.25rem;          /* white gutter between the three areas */
-    --pad: 0.85rem;        /* text inset inside the orange areas */
-    --zoom: 1.5;           /* the people overflow the panel's sides on a phone */
-    --logo: 1.3;
-    --sheet-h: 66%;
-    position: relative; height: 100%; box-sizing: border-box; container-type: size;
-    display: flex; flex-direction: column; gap: var(--g);
-    padding: 0 var(--m);
-    font-size: var(--r);
+  .wic-poster .p-in { position: relative; height: 100%; display: flex; flex-direction: column; font-size: var(--b, 16px); }
+
+  /* Top half: photo with the (visually hidden) title */
+  .wic-poster .p-stage {
+    position: relative; flex: 0 0 50%;
+    display: flex; flex-direction: column; justify-content: space-between;
+    padding: calc(env(safe-area-inset-top, 0px) + 3.6em) 1.6em 1.3em;
+    overflow: hidden; background: #111;
+  }
+  .wic-poster .p-stage img { position: absolute; top: 0; left: 0; width: 100%; height: 118%; object-fit: cover; object-position: 50% 0%; }
+  .wic-poster .p-stage::before {
+    content: ""; position: absolute; inset: 0; z-index: 1;
+    background: linear-gradient(to bottom,
+      rgb(0 0 0 / 0.78) 0%, rgb(0 0 0 / 0.35) 38%, rgb(0 0 0 / 0) 58%,
+      rgb(0 0 0 / 0) 72%, rgb(12 11 11 / 0.75) 90%, #0c0b0b 100%);
+  }
+  .wic-poster .p-titles { position: relative; z-index: 2; }
+  .wic-poster .p-title {
+    display: inline-block; margin: 0;
+    font-weight: 900; font-size: var(--t, 5em); line-height: 0.95; letter-spacing: -0.025em;
+    text-transform: uppercase; white-space: nowrap;
+  }
+  .wic-poster .p-title > span { display: block; }
+  /* Measured for sizing but kept out of view (the logo carries the name) */
+  .wic-poster .p-titles .p-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+  /* Bottom half: key facts, set like a printed notice */
+  .wic-poster .p-panel { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; font-size: calc(var(--ps, 1) * 1em); background: var(--black); color: #f2f2f2; }
+  .wic-poster .p-facts { flex: 1 1 0; min-height: 0; padding: 0.4em 1.6em 0.9em; display: flex; flex-direction: column; justify-content: space-between; gap: 0.6em; }
+  .wic-poster .p-lead { margin: 0; font-size: 0.8em; line-height: 1.45; color: rgb(242 242 242 / 0.92); text-wrap: pretty; }
+  .wic-poster .p-stats { display: grid; grid-template-columns: 1fr 1fr 1.25fr; column-gap: 0.8em; border-top: 1px solid rgb(242 242 242 / 0.16); padding: 0.75em 0; }
+  .wic-poster .p-stat .n { display: block; font-size: 1.55em; font-weight: 700; letter-spacing: -0.03em; line-height: 1.05; white-space: nowrap; }
+  .wic-poster .p-stat .l { display: block; font-size: 0.78em; font-weight: 600; margin-top: 0.15em; }
+  .wic-poster .p-stat .s { display: block; font-size: 0.72em; color: rgb(242 242 242 / 0.6); margin-top: 0.2em; line-height: 1.3; }
+  .wic-poster .p-divs { display: grid; grid-template-columns: 1fr 1fr; column-gap: 0.8em; border-top: 1px solid rgb(242 242 242 / 0.16); padding: 0.75em 0 0.6em; margin-top: -0.6em; }
+  .wic-poster .p-dv .n { display: block; font-size: 1.05em; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
+  .wic-poster .p-dv .l { display: block; font-size: 0.78em; font-weight: 600; margin-top: 0.15em; }
+  .wic-poster .p-dv .s { display: block; font-size: 0.72em; color: rgb(242 242 242 / 0.6); margin-top: 0.2em; }
+
+  /* White strip: sponsors and organizer. Not affected by the facts scale. */
+  .wic-poster .p-strip { background: #f6f5f2; color: #1d1b1b; font-size: var(--b, 16px); padding: 0.9em 1.6em calc(env(safe-area-inset-bottom, 0px) + 0.85em); }
+  .wic-poster .p-spons { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); align-items: center; justify-items: center; gap: 0.7em 1em; }
+  .wic-poster .p-spons li { min-width: 0; }
+  .wic-poster .p-spons li:nth-child(-n+3) { grid-column: span 2; }
+  .wic-poster .p-spons li:nth-child(n+4) { grid-column: span 3; }
+  .wic-poster .p-spons img { display: block; width: calc(var(--w, 5) * 0.92em); max-width: 100%; height: auto; transform: translateY(var(--y, 0)); }
+  .wic-poster .p-sk { margin: 0 0 0.6em; display: flex; align-items: center; gap: 0.8em; font-size: 0.64em; font-weight: 600; color: #000; white-space: nowrap; }
+  .wic-poster .p-sk::before, .wic-poster .p-sk::after { content: ""; flex: 1; height: 1px; background: rgb(0 0 0 / 0.25); }
+  .wic-poster .p-sk2 { margin-top: 0.9em; }
+  .wic-poster .p-by { margin: 0.35em 0 0; text-align: center; font-size: 0.62em; color: #000; }
+  @media (min-width: 640px) {
+    .wic-poster .p-spons { display: flex; justify-content: space-between; gap: 0.8em 2em; max-width: 720px; margin-left: auto; margin-right: auto; }
   }
 
-  /* .c-paper: the printed orange surface of the panel and the tiles. Grain and
-     fibers darken (multiply); the mottle both lightens and darkens (soft-light). */
-  .wic-poster .c-paper { position: relative; isolation: isolate; overflow: hidden; background: var(--orange); color: var(--ink); }
-  .wic-poster .c-paper::before, .wic-poster .c-paper::after { content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none; }
-  .wic-poster .c-paper::before { background-image: var(--paper-grain), var(--paper-fiber); background-size: 220px 220px, 480px 480px; background-blend-mode: multiply; mix-blend-mode: multiply; opacity: 0.7; }
-  .wic-poster .c-paper::after { background-image: var(--paper-mottle); background-size: 640px 640px; mix-blend-mode: soft-light; opacity: 0.42; }
-  .wic-poster .c-paper > * { position: relative; z-index: 1; }
-
-  /* Sheet: room for the fixed header, the title and closing date on the white
-     page, then the orange panel (facts, then the photo) */
-  .wic-poster .c-sheet { flex: 0 0 auto; height: var(--sheet-h); min-height: 0; display: flex; flex-direction: column; }
-  .wic-poster .c-hdr { flex: none; height: calc(env(safe-area-inset-top, 0px) + 3.15rem); }
-  .wic-poster .c-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: calc(0.9 * var(--r)) var(--pad) 0; }
-  .wic-poster .c-ttl { flex: 1 1 0; min-width: 0; }
-  .wic-poster .c-name { margin: 0; font-size: clamp(calc(1.05 * var(--r)), calc(3.2cqw * var(--k)), calc(1.6 * var(--r))); font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
-  .wic-poster .c-sub { margin: calc(0.25 * var(--r)) 0 0; font-size: calc(0.8 * var(--r)); color: var(--muted); max-width: 22em; }
-  .wic-poster .c-due { flex: none; display: flex; flex-direction: column; align-items: flex-start; }
-  .wic-poster .c-lbl { display: block; font-size: calc(0.68 * var(--r)); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; line-height: 1; margin-bottom: calc(0.35 * var(--r)); }
-  .wic-poster .c-date { display: flex; align-items: flex-end; gap: 0.45em; line-height: 0.85; }
-  .wic-poster .c-date .num { font-size: clamp(calc(2.2 * var(--r)), calc((8cqw + 0.5cqh) * var(--k)), calc(4.4 * var(--r))); font-weight: 900; letter-spacing: -0.06em; font-variant-numeric: tabular-nums; }
-  .wic-poster .c-date .dow { display: flex; flex-direction: column; gap: 0.08em; font-size: 0.72em; font-weight: 800; letter-spacing: 0.04em; padding-bottom: 0.1em; }
-  .wic-poster .c-panel { flex: 1 1 0; min-height: 0; margin-top: calc(0.85 * var(--r)); display: flex; flex-direction: column; }
-  .wic-poster .c-stats { flex: none; display: grid; grid-template-columns: 1fr 1fr 1.15fr; column-gap: calc(0.8 * var(--r)); margin: 0; padding: calc(0.8 * var(--r)) var(--pad) 0; }
-  .wic-poster .c-stats > div { min-width: 0; }
-  .wic-poster .c-stats dd { margin: 0; }
-  .wic-poster .c-stats .v { font-size: clamp(calc(1.3 * var(--r)), calc(5.6cqw * var(--k)), calc(2.3 * var(--r))); font-weight: 900; letter-spacing: -0.045em; line-height: 1; white-space: nowrap; }
-  .wic-poster .c-stats .s { font-size: calc(0.72 * var(--r)); color: var(--muted); margin-top: calc(0.3 * var(--r)); line-height: 1.25; }
-  .wic-poster .c-scene { flex: 1 1 0; min-height: 0; }
-  /* A candlestick chart printed faintly on the paper behind the people. It is
-     stretched to fill the area, so the whole rising run shows at any size; the
-     strokes keep their width however it is stretched. */
-  .wic-poster .c-candles { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--ink); opacity: 0.3; mix-blend-mode: multiply; pointer-events: none; }
-  .wic-poster .c-candles line, .wic-poster .c-candles rect { stroke: currentColor; stroke-width: 1.5px; vector-effect: non-scaling-stroke; }
-  .wic-poster .c-candles .up rect { fill: none; }
-  .wic-poster .c-candles .down rect { fill: currentColor; }
-  .wic-poster .c-people { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); width: calc(100% * var(--zoom)); max-width: none; height: auto; max-height: calc(100% - 0.75rem); object-fit: contain; object-position: 50% 100%; }
-
-  /* Division tiles: two orange cells side by side, name on top, the line,
-     team size and arrow along the bottom */
-  .wic-poster .c-tiles { flex: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--g); }
-  .wic-poster .c-tile { display: flex; flex-direction: column; justify-content: space-between; gap: calc(0.55 * var(--r)); min-width: 0; padding: calc(0.75 * var(--r)) var(--pad) calc(0.7 * var(--r)); color: var(--ink); text-decoration: none; }
-  .wic-poster .c-tile .nm { font-size: clamp(calc(1.05 * var(--r)), calc(4.6cqw * var(--k)), calc(2.2 * var(--r))); font-weight: 900; letter-spacing: -0.04em; line-height: 0.98; text-wrap: balance; }
-  .wic-poster .c-tile .rt { display: flex; align-items: flex-end; justify-content: space-between; gap: 0.6rem; min-width: 0; }
-  .wic-poster .c-tile .tx { display: flex; flex-direction: column; align-items: flex-start; font-size: calc(0.74 * var(--r)); line-height: 1.25; min-width: 0; }
-  .wic-poster .c-tile .tx b { font-size: calc(0.86 * var(--r)); font-weight: 800; letter-spacing: -0.01em; }
-  .wic-poster .c-tile .tx span { color: var(--muted); }
-  .wic-poster .c-tile .tx .long { display: none; }
-  .wic-poster .c-tile .ar { flex: none; font-size: calc(1.15 * var(--r)); font-weight: 700; line-height: 1; transition: transform 0.2s; }
-  .wic-poster .c-tile:hover .ar, .wic-poster .c-tile:focus-visible .ar { transform: translateX(0.2rem); }
-  .wic-poster .c-tile:focus-visible { outline: 2px solid var(--ink); outline-offset: -4px; }
-  @media (prefers-reduced-motion: reduce) { .wic-poster .c-tile .ar { transition: none; } }
-
-  /* White band: the sponsors, opening with a small orange plate */
-  .wic-poster .c-strip {
-    --b: clamp(calc(13px * var(--k)), calc((2cqw + 0.8cqh) * var(--k)), calc(17px * var(--k)));
-    flex: 1 1 0; min-height: 0; font-size: var(--b);
-    padding: 0.3em var(--pad) calc(env(safe-area-inset-bottom, 0px) + 0.75em);
-    display: grid; grid-template-columns: minmax(0, 1fr); align-content: center; gap: 0.95em;
-  }
-  .wic-poster .c-zab { display: inline-block; margin: 0 0 0.45em; padding: 0.24em 0.5em 0.2em; background: var(--orange); color: var(--ink); font-size: 0.66em; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1.2; white-space: nowrap; }
-  .wic-poster .c-spons-wrap { display: flex; flex-direction: column; align-items: flex-start; }
-  .wic-poster .c-spons { align-self: stretch; margin: 0.15em 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); align-items: center; justify-items: center; gap: 0.7em 1em; }
-  .wic-poster .c-spons li { min-width: 0; }
-  .wic-poster .c-spons li:nth-child(-n+3) { grid-column: span 2; }
-  .wic-poster .c-spons li:nth-child(n+4) { grid-column: span 3; }
-  /* --w is each logo's width in em at the original poster size; --logo scales them all */
-  .wic-poster .c-spons img { display: block; width: calc(var(--w, 5) * 0.92em * var(--logo)); max-width: 100%; height: auto; transform: translateY(var(--y, 0)); }
-
-  /* Landscape viewports: wider margins, the people at their own size, the
-     facts in one row, a longer line on each tile, the sponsors in one row */
-  .wic-poster.wide .p-in { --m: 1.2rem; --g: 0.375rem; --pad: 1.6rem; --zoom: 1; --logo: 2.1; --sheet-h: 72%; }
-  .wic-poster.wide .c-top { gap: 2.5rem; }
-  .wic-poster.wide .c-ttl { flex: 0 1 auto; }
-  .wic-poster.wide .c-stats { grid-template-columns: repeat(3, max-content); column-gap: clamp(2rem, 4cqw, 4rem); padding: var(--r) var(--pad) 0; }
-  .wic-poster.wide .c-stats .v { font-size: clamp(calc(1.8 * var(--r)), calc(2.9cqw * var(--k)), calc(2.7 * var(--r))); }
-  .wic-poster.wide .c-stats .s { font-size: calc(0.8 * var(--r)); }
-  .wic-poster.wide .c-tile { padding: var(--r) var(--pad) calc(0.9 * var(--r)); gap: calc(0.9 * var(--r)); }
-  .wic-poster.wide .c-tile .tx { font-size: calc(0.85 * var(--r)); max-width: 34em; }
-  .wic-poster.wide .c-tile .tx b { font-size: calc(1.05 * var(--r)); }
-  .wic-poster.wide .c-tile .tx .long { display: inline; margin-top: 0.15em; }
-  .wic-poster.wide .c-tile .ar { font-size: calc(1.4 * var(--r)); }
-  .wic-poster.wide .c-strip { --b: clamp(calc(13px * var(--k)), calc((0.8cqw + 0.9cqh) * var(--k)), calc(17px * var(--k))); padding: 0.4em var(--pad) 0.9em; row-gap: 1em; }
-  .wic-poster.wide .c-spons-wrap { flex-direction: row; align-items: center; gap: 2em; }
-  .wic-poster.wide .c-spons-wrap > .c-zab { margin: 0; }
-  .wic-poster.wide .c-spons { flex: 1 1 auto; align-self: auto; display: flex; justify-content: space-between; gap: 0.8em 2em; margin: 0; }
-  /* Short landscape viewports (phones on their side): keep the headline facts only */
-  .wic-poster.short .p-in { --sheet-h: 75%; }
-  .wic-poster.short .c-sub, .wic-poster.short .c-stats .s, .wic-poster.short .c-tile .tx span { display: none; }
+  /* Landscape viewports: same stacking, wider measure */
+  .wic-poster.wide .p-stage img { height: 100%; object-position: 50% 45%; }
+  .wic-poster.wide .p-stage { padding: calc(env(safe-area-inset-top, 0px) + 4.2em) 2.6em 1.6em; }
+  .wic-poster.wide .p-facts { display: grid; grid-template-columns: 1.1fr 1.4fr; grid-template-rows: auto auto; column-gap: 3em; align-content: center; padding: 0.6em 2.6em 1em; }
+  .wic-poster.wide .p-lead { font-size: 0.95em; max-width: 24em; grid-row: 1 / span 2; align-self: center; }
+  .wic-poster.wide .p-stats { border: 0; padding: 0; column-gap: 2em; }
+  .wic-poster.wide .p-stat .n { font-size: 2em; }
+  .wic-poster.wide .p-divs { grid-column: 2; grid-template-columns: 1fr 1fr 1.25fr; column-gap: 2em; padding: 0.7em 0 0; margin-top: 0.6em; }
+  .wic-poster.wide .p-strip { padding: 0.95em 2.6em; }
+  .wic-poster.wide .p-strip > * { max-width: 720px; margin-left: auto; margin-right: auto; }
+  .wic-poster.wide .p-spons { display: flex; justify-content: space-between; gap: 0.8em 2em; max-width: 720px; }
 }
-
-/* Landing header over the poster. Unlayered so it wins over the header's
-   utility classes. Its side padding lines the logo up with the poster's text;
-   while the white poster is behind it (hero.ts sets data-on="poster") it takes
-   dark ink, and returns to the dark page's light ink once the poster has shrunk
-   or when the menu is open over the dark overlay. */
-.wic[data-tone="dark"] .wic-header { padding-inline: 1.45rem; }
-@media (min-width: 640px) and (min-aspect-ratio: 21/20) {
-  .wic[data-tone="dark"] .wic-header { padding-inline: 2.8rem; }
-}
-.wic-header[data-on="poster"] { --wic-ink: #0c0b0b; --wic-bg: #fbfaf7; }
-.wic-header[data-on="poster"]:has([aria-expanded="true"]) { --wic-ink: #f2f2f2; --wic-bg: #141414; }

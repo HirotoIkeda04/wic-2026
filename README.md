@@ -5,8 +5,8 @@ This repository is a portfolio mirror served at <https://wic.ihiro.page>; the of
 
 ## Stack
 
-- React 19 components (TSX) + [Tailwind CSS v4](https://tailwindcss.com), written to drop into the
-  JPSI site (Next.js). See [HANDOFF.md](HANDOFF.md).
+- React 19 components (TSX) + [Tailwind CSS v4](https://tailwindcss.com), copied from the JPSI site
+  (jpsi-web `components/wic/`), which is the source of truth for <https://jpsi-association.com/wic>
 - [Astro](https://astro.build) as the static shell for this mirror (head metadata, routing, build)
 - Inter, self-hosted through `@fontsource-variable/inter`
 - Deployed to GitHub Pages by `.github/workflows/deploy.yml`
@@ -15,16 +15,16 @@ This repository is a portfolio mirror served at <https://wic.ihiro.page>; the of
 
 ```
 src/
-  wic/          everything that moves to the Next.js site
-    Landing.tsx, DetailPage.tsx, WicHeader.tsx, WicPage.tsx, Pager.tsx, Callout.tsx
-    pages/      Divisions, Rules, Scoring, Schedule, Past (page bodies + meta)
-    hero.ts     landing-page WebGL animation (framework-free)
-    data.ts     navigation, schedule, organizer details, image paths
-    wic.css     tone tokens, article styles, poster layout
-  pages/        thin .astro wrappers, one per route
-  layouts/      Base.astro (document head)
-public/images/wic/2026/   photos and sponsor logos
+  wic/          copy of jpsi-web components/wic/ (minus Next-only files)
+    routes.tsx  mirror-only: page trees and head copy without Next's metadata API
+    data.ts     JPSI_URL, contact address and root-level wicHref are mirror edits
+  pages/        index.astro and [page].astro (one route per NAV slug)
+  layouts/      Base.astro (document head; canonical points to jpsi-association.com/wic)
+public/images/  the images the WIC pages use, copied from jpsi-web
 ```
+
+To resync, copy jpsi-web's `components/wic/` and `public/images/wic/` over these, then
+reapply the mirror edits (`git diff` against the copy shows them).
 
 ## Develop
 

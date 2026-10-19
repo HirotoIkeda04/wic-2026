@@ -1,41 +1,41 @@
 ---
 /**
  * Document shell for the wic.ihiro.page mirror: <head> metadata only. The
- * page body is a React tree from src/wic (what moves to the Next.js site).
+ * page body is a React tree from src/wic, copied from the JPSI site.
  */
 import '../styles/global.css';
-import { SITE, WIC_IMAGES } from '../wic/data';
+import { JPSI_URL, SITE } from '../wic/data';
+import { OG_IMAGE, type WicHead } from '../wic/routes';
 
-interface Props {
-  title: string;
-  description: string;
-  ogTitle?: string;
-  ogType?: 'website' | 'article';
-  themeColor?: string;
-}
-const { title, description, ogTitle = title, ogType = 'article', themeColor = '#f6f5f2' } = Astro.props;
-const canonical = new URL(Astro.url.pathname, Astro.site);
-const ogImage = new URL(WIC_IMAGES.hero, Astro.site);
+type Props = WicHead;
+const { title, description, path } = Astro.props;
+// The official copy on the JPSI site is canonical; this mirror is not.
+const canonical = `${JPSI_URL}/wic${path === '/' ? '' : path}`;
+const ogImage = new URL(OG_IMAGE.src, Astro.site);
 ---
 
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#141414" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <meta name="author" content={SITE.organizer.en} />
     <link rel="canonical" href={canonical} />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <meta name="theme-color" content={themeColor} />
-    <meta property="og:type" content={ogType} />
-    <meta property="og:site_name" content={SITE.name} />
-    <meta property="og:title" content={ogTitle} />
+    <link rel="icon" href="/images/jpsi-icon.png" type="image/png" />
+    <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content="JPSI" />
+    <meta property="og:locale" content="en_US" />
     <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content={String(OG_IMAGE.width)} />
+    <meta property="og:image:height" content={String(OG_IMAGE.height)} />
+    <meta property="og:image:alt" content="World Investment Competition 2026" />
+    <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
-    <slot name="head" />
   </head>
   <body>
     <slot />

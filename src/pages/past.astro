@@ -1,9 +1,0 @@
----
-import Base from '../layouts/Base.astro';
-import { DetailPage } from '../wic/DetailPage';
-import Past, { meta } from '../wic/pages/Past';
----
-
-<Base title={`${meta.title} — World Investment Competition 2026`} ogTitle={`${meta.title} — WIC 2026`} description={meta.description ?? meta.lead}>
-  <DetailPage {...meta} client:load><Past /></DetailPage>
-</Base>
