@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import { SITE, WIC_IMAGES } from "../data";
 import { pick, type WicLang } from "../lang";
+import { EntryStatus } from "./EntryStatus";
 
 const sponsors = [
   { src: WIC_IMAGES.logos.ibkr, alt: "Interactive Brokers", w: 6.2, y: "-0.16em" },
@@ -66,9 +67,7 @@ export function Hero({ lang }: { lang: WicLang }) {
             Competition <span className="font-light">2026</span>
           </h1>
           <p className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[0.95rem]">
-            <span className="rounded-full border border-[#f2f2f2]/40 px-4 py-1.5 font-semibold">
-              {pick(lang, "Entries close Nov 15", "応募締切 11月15日")}
-            </span>
+            <EntryStatus lang={lang} />
             <span className="text-[#f2f2f2]/70">{pick(lang, "Free to enter · Undergrad & grad students", "参加費無料・大学生／大学院生")}</span>
           </p>
         </div>

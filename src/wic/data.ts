@@ -3,6 +3,7 @@ import type { WicLang } from "./lang";
 // This mirror (wic.ihiro.page) serves the WIC pages at the root; the official
 // copy lives under /wic on the JPSI site, which also hosts the pages linked below.
 export const JPSI_URL = "https://jpsi-association.com";
+export const WASEDA_AI_URL = "https://wasedaaiclub.com/";
 const CONTACT_EMAIL = "jpsi.waseda.univ@outlook.com";
 
 /** Copy that exists in both languages. `/wic/ja` is a dev-only review copy of `/wic`. */

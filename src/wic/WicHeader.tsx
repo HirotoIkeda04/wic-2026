@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { NAV, SITE, wicHref, type WicSlug } from "./data";
+import { ContactIcons } from "./ContactIcons";
+import { JPSI_URL, NAV, WASEDA_AI_URL, SITE, wicHref, type WicSlug } from "./data";
 import { pick, type WicLang } from "./lang";
 
 /**
@@ -52,7 +53,7 @@ export function WicHeader({ lang, current }: { lang: WicLang; current?: WicSlug 
         aria-label={pick(lang, "Menu", "メニュー")}
         className={`fixed inset-0 z-40 flex-col overflow-y-auto bg-wic-bg/95 pt-[calc(env(safe-area-inset-top,0px)+4.6rem)] text-right backdrop-blur-[10px] ${open ? "flex" : "hidden"}`}
         onClick={(e) => {
-          if ((e.target as HTMLElement).tagName === "A") setOpen(false);
+          if ((e.target as HTMLElement).closest("a")) setOpen(false);
         }}
       >
         <div className="flex-none px-6 pb-[1.4rem]">
@@ -70,19 +71,19 @@ export function WicHeader({ lang, current }: { lang: WicLang; current?: WicSlug 
         <div className="mt-auto flex-none border-t border-wic-line px-6 pb-[calc(env(safe-area-inset-bottom,0px)+1.2rem)] pt-[1.3rem] text-[0.84rem] leading-[1.55] text-wic-ink/70 [&_b]:mb-[0.35rem] [&_b]:block [&_b]:text-wic-ink">
           <p className="mb-[0.9rem]">
             <b>{pick(lang, "Organizer", "主催")}</b>
-            {SITE.organizer[lang]}
+            <a href={JPSI_URL} className="border-b border-wic-ink/35 text-wic-ink/70 no-underline hover:text-wic-ink">
+              {SITE.organizer[lang]}
+            </a>
             <br />
             {pick(lang, "AI Agent division co-host: ", "AIエージェント部門の共催：")}
-            {SITE.coHost[lang]}
+            <a href={WASEDA_AI_URL} className="border-b border-wic-ink/35 text-wic-ink/70 no-underline hover:text-wic-ink">
+              {SITE.coHost[lang]}
+            </a>
           </p>
-          <p className="mb-[0.9rem]">
+          <div className="mb-[0.9rem]">
             <b>{pick(lang, "Contact", "お問い合わせ")}</b>
-            {SITE.contact.map((c) => (
-              <a key={c.label} href={c.href} className="ml-[1.1em] border-b border-wic-ink/35 text-wic-ink no-underline">
-                {c.label}
-              </a>
-            ))}
-          </p>
+            <ContactIcons className="justify-end" />
+          </div>
           <p className="text-[0.74rem] text-wic-ink/45">{SITE.legal[lang]}</p>
         </div>
       </nav>
