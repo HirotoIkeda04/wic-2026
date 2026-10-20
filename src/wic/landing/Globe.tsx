@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import landDots from "./land-dots.json";
 
 /**
  * Dotted globe (Three.js) in the manner of cloudflare.com, in black and white:
  * a dark sphere, land drawn as a grid of dots, a faint rim, and a marker for
  * each WIC2025 university with its name beside it (HTML, placed every frame).
- * It turns slowly and can be dragged. Without WebGL the box stays empty
- * apart from its label; with reduced motion it renders one still frame.
+ * It turns slowly and can be dragged. Three.js and the land dots are fetched
+ * only as the section comes within a screen of the viewport. Without WebGL the
+ * box stays empty apart from its label; with reduced motion it renders one
+ * still frame.
  */
 
 type Site = {
@@ -58,13 +59,22 @@ export function Globe({ label }: { label: string }) {
     let disposed = false;
     let cleanup = () => {};
 
-    (async () => {
-      const THREE = await import("three");
+    // Start when the section is within a screen's height of the viewport
+    const begin = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return;
+      begin.disconnect();
+      setup();
+    }, { rootMargin: "100% 0px" });
+    begin.observe(box);
+
+    async function setup() {
+      const { BufferGeometry, Color, Float32BufferAttribute, Group, Mesh, MeshBasicMaterial, PerspectiveCamera, Points, RingGeometry, Scene, ShaderMaterial, SphereGeometry, Vector3, WebGLRenderer } = await import("three");
+      const { default: landDots } = await import("./land-dots.json");
       if (disposed) return;
 
       let renderer: import("three").WebGLRenderer;
       try {
-        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer = new WebGLRenderer({ antialias: true, alpha: true });
       } catch {
         return;
       }
@@ -73,11 +83,11 @@ export function Globe({ label }: { label: string }) {
       renderer.domElement.className = "absolute inset-0 size-full touch-pan-y";
       box.appendChild(renderer.domElement);
 
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 50);
+      const scene = new Scene();
+      const camera = new PerspectiveCamera(30, 1, 0.1, 50);
       camera.position.set(0, 0, 4.4);
 
-      const globe = new THREE.Group();
+      const globe = new Group();
       globe.rotation.x = 0.3;                // tilt the north toward the viewer
       globe.rotation.y = -2.5;               // start over Europe and India
       scene.add(globe);
@@ -85,18 +95,18 @@ export function Globe({ label }: { label: string }) {
       const track = <T extends { dispose(): void }>(d: T) => (disposables.push(d), d);
 
       // Dark body; hides the dots on the far side
-      globe.add(new THREE.Mesh(
-        track(new THREE.SphereGeometry(R * 0.995, 96, 64)),
-        track(new THREE.MeshBasicMaterial({ color: 0x0e0e0e })),
+      globe.add(new Mesh(
+        track(new SphereGeometry(R * 0.995, 96, 64)),
+        track(new MeshBasicMaterial({ color: 0x0e0e0e })),
       ));
 
       // Rim: a hairline on the silhouette, which sits in front of the centre
       // (at z = R²/d) with radius R·√(1 − R²/d²) for a camera at distance d
       const d = camera.position.z;
       const rs = R * Math.sqrt(1 - (R * R) / (d * d));
-      const rim = new THREE.Mesh(
-        track(new THREE.RingGeometry(rs, rs * 1.004, 256)),
-        track(new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.22, depthWrite: false })),
+      const rim = new Mesh(
+        track(new RingGeometry(rs, rs * 1.004, 256)),
+        track(new MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.22, depthWrite: false })),
       );
       rim.position.z = (R * R) / d;
       scene.add(rim);
@@ -104,11 +114,11 @@ export function Globe({ label }: { label: string }) {
       // Land dots
       const pts: number[] = [];
       for (let i = 0; i < landDots.length; i += 2) pts.push(...toXYZ(landDots[i], landDots[i + 1], R * 1.002));
-      const dotGeo = track(new THREE.BufferGeometry());
-      dotGeo.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
-      const dotMat = track(new THREE.ShaderMaterial({
+      const dotGeo = track(new BufferGeometry());
+      dotGeo.setAttribute("position", new Float32BufferAttribute(pts, 3));
+      const dotMat = track(new ShaderMaterial({
         transparent: true,
-        uniforms: { uSize: { value: 2.1 * dpr }, uColor: { value: new THREE.Color(...INK) } },
+        uniforms: { uSize: { value: 2.1 * dpr }, uColor: { value: new Color(...INK) } },
         vertexShader: `uniform float uSize; varying float vFace;
           void main(){
             vec4 mv = modelViewMatrix * vec4(position,1.0);
@@ -124,13 +134,13 @@ export function Globe({ label }: { label: string }) {
             gl_FragColor = vec4(uColor, (0.12 + 0.48 * smoothstep(0.0, 0.7, vFace)) * smoothstep(0.5, 0.3, d));
           }`,
       }));
-      globe.add(new THREE.Points(dotGeo, dotMat));
+      globe.add(new Points(dotGeo, dotMat));
 
       // Markers: a solid dot with a ring that breathes
-      const sitePos = SITES.map((s) => new THREE.Vector3(...toXYZ(s.lat, s.lon, R * 1.004)));
-      const markGeo = track(new THREE.BufferGeometry().setFromPoints(sitePos));
-      markGeo.setAttribute("size", new THREE.Float32BufferAttribute(SITES.map(() => 14), 1));
-      const markMat = track(new THREE.ShaderMaterial({
+      const sitePos = SITES.map((s) => new Vector3(...toXYZ(s.lat, s.lon, R * 1.004)));
+      const markGeo = track(new BufferGeometry().setFromPoints(sitePos));
+      markGeo.setAttribute("size", new Float32BufferAttribute(SITES.map(() => 14), 1));
+      const markMat = track(new ShaderMaterial({
         transparent: true,
         depthWrite: false,
         uniforms: { uTime: { value: 0 }, uDpr: { value: dpr } },
@@ -153,7 +163,7 @@ export function Globe({ label }: { label: string }) {
             gl_FragColor = vec4(vec3(1.0), a);
           }`,
       }));
-      globe.add(new THREE.Points(markGeo, markMat));
+      globe.add(new Points(markGeo, markMat));
 
       function resize() {
         const { width, height } = box.getBoundingClientRect();
@@ -162,7 +172,7 @@ export function Globe({ label }: { label: string }) {
         camera.updateProjectionMatrix();
       }
       // Labels follow their marker and fade out as it turns toward the limb
-      const p = new THREE.Vector3(), toCam = new THREE.Vector3();
+      const p = new Vector3(), toCam = new Vector3();
       function placeLabels() {
         const { width, height, left } = box.getBoundingClientRect();
         // Labels may hang outside the box, but not off the screen
@@ -248,10 +258,11 @@ export function Globe({ label }: { label: string }) {
         renderer.dispose();
         el.remove();
       };
-    })();
+    }
 
     return () => {
       disposed = true;
+      begin.disconnect();
       cleanup();
     };
   }, []);

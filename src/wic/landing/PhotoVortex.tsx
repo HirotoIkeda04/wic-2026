@@ -8,8 +8,10 @@ import { useEffect, useRef } from "react";
  * carries it up the helix, and it also turns slowly on its own. Photos facing the camera are bright and sharp-edged,
  * those to the side and above or below fade into the dark.
  *
- * Fills its positioned parent. Renders only while on screen; with reduced
- * motion it draws one still frame.
+ * Fills its positioned parent. Three.js, the renderer and the photos are
+ * fetched only once the section reaches the viewport, so the first screen
+ * loads without them. Renders only while on screen; with reduced motion it
+ * draws one still frame.
  */
 
 const RADIUS = 4;
@@ -80,13 +82,23 @@ export function PhotoVortex({ photos }: { photos: string[] }) {
     let disposed = false;
     let cleanup = () => {};
 
-    (async () => {
-      const THREE = await import("three");
+    // Start once the section has come a little way into the viewport: on phones
+    // its top edge already shows under the hero, so without the margin it would
+    // load with the first screen
+    const begin = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return;
+      begin.disconnect();
+      setup();
+    }, { rootMargin: "0px 0px -15% 0px" });
+    begin.observe(box);
+
+    async function setup() {
+      const { Color, DoubleSide, Mesh, PerspectiveCamera, PlaneGeometry, SRGBColorSpace, Scene, ShaderMaterial, TextureLoader, WebGLRenderer } = await import("three");
       if (disposed) return;
 
       let renderer: import("three").WebGLRenderer;
       try {
-        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer = new WebGLRenderer({ antialias: true, alpha: true });
       } catch {
         return;
       }
@@ -94,21 +106,21 @@ export function PhotoVortex({ photos }: { photos: string[] }) {
       renderer.domElement.className = "absolute inset-0 size-full";
       box.appendChild(renderer.domElement);
 
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(62, 1, 0.05, 30);
-      const bg = new THREE.Color(BG);
+      const scene = new Scene();
+      const camera = new PerspectiveCamera(62, 1, 0.05, 30);
+      const bg = new Color(BG);
 
-      const loader = new THREE.TextureLoader();
+      const loader = new TextureLoader();
       const disposables: { dispose(): void }[] = [];
-      const geo = new THREE.PlaneGeometry(PLANE_W, PLANE_H);
+      const geo = new PlaneGeometry(PLANE_W, PLANE_H);
       disposables.push(geo);
 
       const materials = photos.map((src) => {
-        const mat = new THREE.ShaderMaterial({
+        const mat = new ShaderMaterial({
           vertexShader: VERT,
           fragmentShader: FRAG,
           transparent: true,
-          side: THREE.DoubleSide,
+          side: DoubleSide,
           uniforms: {
             uMap: { value: null },
             uImgAspect: { value: 1 },
@@ -117,7 +129,7 @@ export function PhotoVortex({ photos }: { photos: string[] }) {
           },
         });
         loader.load(src, (tex) => {
-          tex.colorSpace = THREE.SRGBColorSpace;
+          tex.colorSpace = SRGBColorSpace;
           tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
           mat.uniforms.uMap.value = tex;
           mat.uniforms.uImgAspect.value = tex.image.width / tex.image.height;
@@ -139,7 +151,7 @@ export function PhotoVortex({ photos }: { photos: string[] }) {
         const a = ((i * (1 + TWIST / PER_TURN)) / PER_TURN) * Math.PI * 2;
         const y = (i - COUNT / 2) * RISE;
         const r = RADIUS * (0.85 + 0.35 * jitter(i, 1));
-        const mesh = new THREE.Mesh(geo, materials[(i * 3) % materials.length]);
+        const mesh = new Mesh(geo, materials[(i * 3) % materials.length]);
         mesh.position.set(Math.sin(a) * r, y, -Math.cos(a) * r);
         mesh.scale.setScalar(0.8 + 0.35 * jitter(i, 2));
         mesh.lookAt(0, y, 0); // face the axis, where the camera stands
@@ -207,10 +219,11 @@ export function PhotoVortex({ photos }: { photos: string[] }) {
         renderer.dispose();
         renderer.domElement.remove();
       };
-    })();
+    }
 
     return () => {
       disposed = true;
+      begin.disconnect();
       cleanup();
     };
   }, [photos]);
