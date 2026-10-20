@@ -77,9 +77,15 @@ function oklchToHex([L, C, H]: Lch): string {
     })
     .join("")}`;
 }
-/** `n` + 1 colours from a to b, blended in OKLCH along the shorter way round the hue circle. */
+/**
+ * `n` + 1 colours from a to b, blended in OKLCH along the shorter way round the hue circle.
+ * A grey has next to no hue, so it takes the other colour's: purple into grey then just
+ * fades, instead of swinging round the circle through red.
+ */
 function oklchSteps(a: string, b: string, n = 8): string[] {
-  const [l1, c1, h1] = hexToOklch(a), [l2, c2, h2] = hexToOklch(b);
+  const [l1, c1, ha] = hexToOklch(a), [l2, c2, hb] = hexToOklch(b);
+  const GREY = 0.03;
+  const h1 = c1 < GREY ? hb : ha, h2 = c2 < GREY ? h1 : hb;
   let dh = h2 - h1;
   if (dh > 180) dh -= 360;
   if (dh < -180) dh += 360;
@@ -121,9 +127,12 @@ const MONTHS: [string, string][] = [
   ["2027-02-01", "2027-03-01"], ["2027-03-01", "2027-04-01"], ["2027-04-01", "2027-04-30"],
 ];
 /** The colour a capsule fills with as its dates pass. */
-const FILL: Record<Who, string> = { trader: "#c4484f", agent: "#7656c2", both: "#d6d2cb" };
+const FILL: Record<Who, string> = { trader: "#c4484f", agent: "#7656c2", both: "#d6d2cb" }; // hex: blended by oklchSteps
 /** A capsule's colour before its dates: a plain grey. */
 const PENDING = "#2c2b2a";
+/** The soft edge where a capsule's colour meets its grey at `f`%: OKLCH steps (see oklchSteps), 12% deep. */
+const edge = (c: string, f: number) =>
+  oklchSteps(c, PENDING, 6).map((s, k, all) => `${s} ${Math.min(100, Math.max(0, f - 6 + (12 * k) / (all.length - 1))).toFixed(1)}%`).join(", ");
 /**
  * The lines between capsules, measured from the rendered capsules
  * ([data-lane]). Each lane runs straight down; where a shared item meets the lanes,
@@ -257,7 +266,7 @@ export function ScheduleSection({ lang }: { lang: WicLang }) {
     // Filled from the top down to today, with a soft edge
     const f = progress(it) * 100;
     const c = FILL[it.who];
-    const fill = f >= 100 ? { backgroundColor: c } : { backgroundColor: PENDING, backgroundImage: f > 0 ? `linear-gradient(in oklch to bottom, ${c} 0%, ${c} ${Math.max(0, f - 6)}%, ${PENDING} ${Math.min(100, f + 6)}%)` : undefined }; // blended in OKLCH, like the lines
+    const fill = f >= 100 ? { backgroundColor: c } : { backgroundColor: PENDING, backgroundImage: f > 0 ? `linear-gradient(to bottom, ${c} 0%, ${edge(c, f)})` : undefined };
     // Once the fill has passed the icon, the icon turns pale (dark on a shared item's light fill)
     const iconOn = f >= 55 ? (it.who === "both" ? "!text-[#1d1b1b]" : "!text-white") : "";
     return (
