@@ -7,17 +7,17 @@ export function RulesGlance({ lang }: { lang: WicLang }) {
     {
       big: "Nasdaq",
       head: pick(lang, "What you trade", "取引対象"),
-      body: pick(lang, "Stocks, ETFs and options listed on Nasdaq, on an Interactive Brokers demo account. Leverage up to 4x intraday.", "Nasdaq 上場の株式・ETF・オプション。Interactive Brokers のデモ口座で取引する。日中のレバレッジは最大4倍。"),
+      body: pick(lang, "Stocks, ETFs and options listed on Nasdaq, in an Interactive Brokers paper trading account. Leverage up to 4x intraday.", "Nasdaq 上場の株式・ETF・オプション。Interactive Brokers のデモ口座で取引する。日中のレバレッジは最大4倍。"),
     },
     {
       big: "70 / 30",
-      head: pick(lang, "How you are ranked", "順位の決まり方"),
-      body: pick(lang, "Investment performance counts for 70% and your reports for 30%. Returns alone do not win.", "運用成績70%、レポート30%で順位を統合する。リターンだけでは勝てない。"),
+      head: pick(lang, "How you're ranked", "順位の決まり方"),
+      body: pick(lang, "Investment performance counts for 70% and your reports for 30%. Returns alone won't win.", "運用成績70%、レポート30%で順位を統合する。リターンだけでは勝てない。"),
     },
     {
       big: "−20%",
-      head: pick(lang, "The one hard limit", "唯一の絶対条件"),
-      body: pick(lang, "If your team's net assets close a trading day 20% below their peak, the team is out.", "取引日終了時点でチームの純資産が最高値から20%下落すると失格。"),
+      head: pick(lang, "Maximum drawdown", "最大ドローダウン"),
+      body: pick(lang, "If your team's account value closes a trading day 20% below its peak, the team is out.", "取引日終了時点でチームの純資産が最高値から20%下落すると失格。"),
     },
   ];
   return (
