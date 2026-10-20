@@ -4,12 +4,12 @@ import { MarketBackdrop } from "./MarketBackdrop";
 import { MoreLink, Section } from "./Section";
 
 /** `market`: how the card's band draws the shared price series (see MarketBackdrop). */
-type Card = { slug: WicSlug; market: "chart" | "ascii"; name: string; tagline: string; facts: [string, string][]; note?: string };
+type Card = { slug: WicSlug; market: "chart" | "ascii"; name: string; facts: [string, string][]; note?: string };
 
 /** The division colours of the schedule (red for traders, purple for agents) fill the chart band. */
 const TONE: Record<Card["market"], { band: string; pill: string }> = {
-  chart: { band: "bg-[#c4484f]", pill: "bg-[#c4484f] text-[#f2f2f2]" },
-  ascii: { band: "bg-[#7656c2]", pill: "bg-[#7656c2] text-[#f2f2f2]" },
+  chart: { band: "bg-[#c4484f]", pill: "bg-[#f2f2f2] text-[#c4484f]" },
+  ascii: { band: "bg-[#7656c2]", pill: "bg-[#f2f2f2] text-[#7656c2]" },
 };
 
 export function Divisions({ lang }: { lang: WicLang }) {
@@ -18,7 +18,6 @@ export function Divisions({ lang }: { lang: WicLang }) {
       slug: "trader",
       market: "chart",
       name: pick(lang, "Trader division", "トレーダー部門"),
-      tagline: pick(lang, "You trade.", "自分で取引する。"),
       facts: [
         [pick(lang, "Team", "チーム"), pick(lang, "3 students", "3名")],
         [pick(lang, "Account", "口座"), pick(lang, "$1M demo account per member", "メンバーごとに100万ドルのデモ口座")],
@@ -30,7 +29,6 @@ export function Divisions({ lang }: { lang: WicLang }) {
       slug: "ai-agent",
       market: "ascii",
       name: pick(lang, "AI Agent division", "AIエージェント部門"),
-      tagline: pick(lang, "Your agent trades.", "エージェントが自律的に取引する。"),
       facts: [
         [pick(lang, "Team", "チーム"), pick(lang, "1 – 3 students", "1〜3名")],
         [pick(lang, "Account", "口座"), pick(lang, "One $1M demo account per team", "チームで100万ドルのデモ口座1つ")],
@@ -45,17 +43,18 @@ export function Divisions({ lang }: { lang: WicLang }) {
       <div className="grid gap-5 md:grid-cols-2">
         {cards.map((c) => (
           <article key={c.slug} className="flex flex-col overflow-hidden rounded-2xl border border-wic-line bg-wic-ink/[0.03]">
-            {/* The same market, read as a chart (trader) or as characters (agent) */}
-            <div className={`relative h-44 sm:h-52 ${TONE[c.market].band}`}>
-              <MarketBackdrop mode={c.market} ink="255,255,255" />
-            </div>
-            <div className="flex flex-1 flex-col p-7 sm:p-9">
-              <div className="flex items-baseline justify-between gap-4">
-                <h3 className="m-0 text-[1.6rem] font-semibold tracking-[-0.02em]">{c.name}</h3>
+            {/* The division name over the same market, read as a chart (trader) or as characters (agent) */}
+            <div className={`flex flex-col ${TONE[c.market].band}`}>
+              <div className="flex items-baseline justify-between gap-4 px-7 pt-6 sm:px-9 sm:pt-8">
+                <h3 className="m-0 text-[1.6rem] font-semibold tracking-[-0.02em] text-[#f2f2f2]">{c.name}</h3>
                 {c.note && <span className={`whitespace-nowrap rounded-full px-3 py-1 text-[0.75rem] font-semibold ${TONE[c.market].pill}`}>{pick(lang, "New", "新設")}</span>}
               </div>
-              <p className="m-0 mt-1 text-[1.1rem] text-wic-muted">{c.tagline}</p>
-              <dl className="m-0 mt-7 flex-1 divide-y divide-wic-line border-t border-wic-line">
+              <div className="relative h-40 sm:h-48">
+                <MarketBackdrop mode={c.market} ink="255,255,255" />
+              </div>
+            </div>
+            <div className="flex flex-1 flex-col px-7 pb-7 pt-3 sm:px-9 sm:pb-9 sm:pt-4">
+              <dl className="m-0 flex-1 divide-y divide-wic-line">
                 {c.facts.map(([k, v]) => (
                   <div key={k} className="grid grid-cols-[7rem_1fr] gap-4 py-3.5">
                     <dt className="text-[0.88rem] text-wic-muted">{k}</dt>
@@ -64,7 +63,7 @@ export function Divisions({ lang }: { lang: WicLang }) {
                 ))}
               </dl>
               {c.note && <p className="mb-0 mt-5 text-[0.9rem] text-wic-muted">{c.note}</p>}
-              <div className="mt-7">
+              <div className="mt-7 flex justify-end">
                 <MoreLink href={wicHref(lang, c.slug)}>{pick(lang, "Read more", "詳しく見る")}</MoreLink>
               </div>
             </div>
