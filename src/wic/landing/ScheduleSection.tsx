@@ -307,7 +307,7 @@ export function ScheduleSection({ lang }: { lang: WicLang }) {
       <p className="mb-0 mt-8 text-[0.9rem] text-wic-muted">
         {pick(lang, "Entries close at 23:59 ET on Nov 15. Live trading ends at 15:50 ET on Mar 25.", "エントリー締切は11月15日の米国東部時間 23:59。本番取引は3月25日の米国東部時間 15:50 までに全ポジションを決済する。")}
       </p>
-      <div className="mt-6">
+      <div className="mt-6 flex justify-end">
         <MoreLink href={wicHref(lang, "schedule")}>{pick(lang, "Full schedule", "日程の詳細")}</MoreLink>
       </div>
     </Section>

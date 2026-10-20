@@ -31,7 +31,7 @@ export function RulesGlance({ lang }: { lang: WicLang }) {
           </div>
         ))}
       </div>
-      <div className="mt-8">
+      <div className="mt-8 flex justify-end">
         <MoreLink href={wicHref(lang, "rules")}>{pick(lang, "Full rules", "ルールの全文")}</MoreLink>
       </div>
     </Section>

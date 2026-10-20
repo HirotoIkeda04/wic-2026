@@ -35,7 +35,7 @@ export function Prize({ lang }: { lang: WicLang }) {
       <p className="mb-0 mt-6 text-[0.9rem] text-wic-muted">
         {pick(lang, "Total value of the prizes. Details are on each division's page.", "金額は賞品の総額。詳細は各部門のページを参照。")}
       </p>
-      <div className="mt-6">
+      <div className="mt-6 flex justify-end">
         <MoreLink href={wicHref(lang, "trader")}>{pick(lang, "Trader division prizes", "トレーダー部門の賞品")}</MoreLink>
       </div>
     </Section>

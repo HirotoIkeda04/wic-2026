@@ -23,7 +23,7 @@ export function LastYear({ lang }: { lang: WicLang }) {
               "ドイツ、スイス、イギリス、カナダ、アメリカ、インド、オーストラリア、マレーシア、日本の16大学が参加した。優勝した LMU Investment Club（ミュンヘン）は +33.3% のリターンを上げ、表彰式のため東京を訪れた。",
             )}
           </p>
-          <div className="mt-8">
+          <div className="mt-8 flex justify-end">
             <MoreLink href={wicHref(lang, "past")}>{pick(lang, "Past editions", "過去の大会")}</MoreLink>
           </div>
         </div>
