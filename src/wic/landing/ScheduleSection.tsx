@@ -225,11 +225,11 @@ export function ScheduleSection({ lang }: { lang: WicLang }) {
   const Capsule = ({ it }: { it: Item }) => (
     <span
       data-lane={it.who}
-      className={`relative z-10 flex w-8 flex-none items-center justify-center rounded-full border sm:w-11 ${TONE[it.who].capsule} ${
-        it.end ? "self-stretch" : "h-8 sm:h-11"
+      className={`relative z-10 flex w-10 flex-none items-center justify-center rounded-full border sm:w-12 ${TONE[it.who].capsule} ${
+        it.end ? "self-stretch" : "h-10 sm:h-12"
       }`}
     >
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="sm:size-5">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="sm:size-[22px]">
         {ICONS[it.icon]}
       </svg>
     </span>
@@ -247,8 +247,10 @@ export function ScheduleSection({ lang }: { lang: WicLang }) {
   return (
     <Section id="schedule" title={pick(lang, "From entry to the awards in Tokyo.", "エントリーから東京での表彰式まで。")}>
       {/* Trader lane | middle | AI Agent lane. Lane capsules sit against the middle
-          column, so a shared capsule there is centred between the lanes. */}
-      <div ref={gridRef} className="relative mx-auto grid max-w-[48rem] grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,1fr)] gap-x-2 gap-y-2.5 sm:grid-cols-[minmax(0,1fr)_4rem_minmax(0,1fr)] sm:gap-x-4">
+          column, so a shared capsule there is centred between the lanes. The middle
+          column is narrower than a capsule: shared capsules spill over its edges,
+          which is fine as they never share a row with a lane capsule. */}
+      <div ref={gridRef} className="relative mx-auto grid max-w-[48rem] grid-cols-[minmax(0,1fr)_1.25rem_minmax(0,1fr)] gap-x-1 gap-y-2.5 sm:grid-cols-[minmax(0,1fr)_2rem_minmax(0,1fr)] sm:gap-x-2">
         <svg aria-hidden="true" className="pointer-events-none absolute inset-0 size-full overflow-visible">
           <defs>
             {rails.map((r, i) => (
@@ -282,7 +284,8 @@ export function ScheduleSection({ lang }: { lang: WicLang }) {
                 <div className="flex items-center justify-center">
                   <Capsule it={it} />
                 </div>
-                <div className="min-w-0 self-center">
+                {/* Clear the shared capsule where it spills past the narrow middle column */}
+                <div className="min-w-0 self-center pl-4 sm:pl-2.5">
                   <p className={titleCls}>{it.title}</p>
                   <p className={subCls}>{when(it)}</p>
                 </div>
