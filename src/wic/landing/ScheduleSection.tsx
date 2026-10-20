@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { wicHref } from "../data";
 import { pick, type WicLang } from "../lang";
 import { MoreLink, Section } from "./Section";
@@ -27,12 +29,63 @@ const ICONS = {
 
 type Who = "both" | "trader" | "agent";
 
-/** Division colours: red for traders, purple for agents, grey for both. */
-const TONE: Record<Who, { fill: string; text: string }> = {
-  trader: { fill: "bg-[#c4484f]", text: "text-[#e2878b]" },
-  agent: { fill: "bg-[#7656c2]", text: "text-[#ac95e4]" },
-  both: { fill: "bg-[#5a5a5a]", text: "text-[#b4b4b4]" },
+/** Division colours: red for traders, purple for agents, red into purple for both. */
+const TONE: Record<Who, { fill: string; text: string; hex: string }> = {
+  trader: { fill: "bg-[#c4484f]", text: "text-[#e2878b]", hex: "#c4484f" },
+  agent: { fill: "bg-[#7656c2]", text: "text-[#ac95e4]", hex: "#7656c2" },
+  // Both divisions: the OKLCH midpoint of the trader red and the agent purple.
+  // (Trial; the gradient it replaces was
+  // "bg-[linear-gradient(in_oklch_to_right,#c4484f_20%,#7656c2_80%)]".)
+  both: { fill: "bg-[color-mix(in_oklch,#c4484f,#7656c2)]", text: "text-[#b4b4b4]", hex: "" },
 };
+
+/*
+ * OKLCH blending for the SVG lines, which (unlike CSS) cannot interpolate in
+ * OKLCH themselves: the stops are worked out here instead.
+ */
+type Lch = [l: number, c: number, h: number];
+function hexToOklch(hex: string): Lch {
+  const lin = [1, 3, 5].map((i) => {
+    const v = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  });
+  const [r, g, b] = lin;
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  const L = 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s;
+  const A = 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s;
+  const B = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s;
+  return [L, Math.hypot(A, B), (Math.atan2(B, A) * 180) / Math.PI];
+}
+function oklchToHex([L, C, H]: Lch): string {
+  const A = C * Math.cos((H * Math.PI) / 180), B = C * Math.sin((H * Math.PI) / 180);
+  const l = (L + 0.3963377774 * A + 0.2158037573 * B) ** 3;
+  const m = (L - 0.1055613458 * A - 0.0638541728 * B) ** 3;
+  const s = (L - 0.0894841775 * A - 1.291485548 * B) ** 3;
+  const rgb = [
+    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
+  ];
+  return `#${rgb
+    .map((v) => {
+      const g = v <= 0.0031308 ? 12.92 * v : 1.055 * Math.max(0, v) ** (1 / 2.4) - 0.055;
+      return Math.round(Math.min(1, Math.max(0, g)) * 255).toString(16).padStart(2, "0");
+    })
+    .join("")}`;
+}
+/** `n` + 1 colours from a to b, blended in OKLCH along the shorter way round the hue circle. */
+function oklchSteps(a: string, b: string, n = 8): string[] {
+  const [l1, c1, h1] = hexToOklch(a), [l2, c2, h2] = hexToOklch(b);
+  let dh = h2 - h1;
+  if (dh > 180) dh -= 360;
+  if (dh < -180) dh += 360;
+  return Array.from({ length: n + 1 }, (_, i) => {
+    const t = i / n;
+    return oklchToHex([l1 + (l2 - l1) * t, c1 + (c2 - c1) * t, h1 + dh * t]);
+  });
+}
 
 /** A day at noon UTC, for counting days between dates. */
 const day = (iso: string) => Date.parse(`${iso}T12:00:00Z`);
@@ -52,10 +105,80 @@ type Item = {
 
 /**
  * Key dates in two lanes, one per division, so their overlapping periods sit
- * side by side; items for both divisions span both lanes. Time runs down in
+ * side by side; items for both divisions take one capsule in the middle. Time runs down in
  * phases (one grid row each), with each phase's start date on the left.
  * Events are dots, periods are capsules; colours mark the division.
  */
+/**
+ * The lines between capsules, measured from the rendered capsules
+ * ([data-lane]). Each lane runs straight down; where a shared item meets the lanes,
+ * the line forks out to both lanes or joins back into the middle. Lines within
+ * a lane fade down from the colour of the capsule above to the one below.
+ * Lines that touch a shared item run, like its capsule, from red on the trader
+ * side to purple on the agent side, across the width.
+ */
+type Rail = { d: string; x1: number; y1: number; x2: number; y2: number; from: string; to: string; blend: [number, number] };
+/** Where across the lanes a shared line blends red into purple: a band in the middle. */
+const BLEND: [number, number] = [0.3, 0.7];
+function useRails(grid: React.RefObject<HTMLDivElement | null>) {
+  const [rails, setRails] = useState<Rail[]>([]);
+  useEffect(() => {
+    const el = grid.current;
+    if (!el) return;
+    const measure = () => {
+      const box = el.getBoundingClientRect();
+      const caps = [...el.querySelectorAll<HTMLElement>("[data-lane]")]
+        .map((c) => {
+          const r = c.getBoundingClientRect();
+          return {
+            lane: c.dataset.lane as Who,
+            x: r.left - box.left + r.width / 2,
+            top: r.top - box.top,
+            bottom: r.bottom - box.top,
+          };
+        })
+        .sort((a, b) => a.top - b.top);
+      type Cap = (typeof caps)[number];
+
+      // Lines. Forks turn just above the lanes they lead to, and joins just
+      // below the lanes they come from, so the turn falls in the gap between rows.
+      const parts: Rail[] = [];
+      const laneCap = (lane: Who) => caps.find((c) => c.lane === lane);
+      const xT = laneCap("trader")?.x ?? 0, xA = laneCap("agent")?.x ?? 0;
+      const seg = (a: Cap, b: Cap, fork = false) => {
+        const turn = fork ? b.top - 5 : a.bottom + 5;
+        const d = Math.abs(a.x - b.x) < 0.5 ? `M${a.x} ${a.bottom}V${b.top}` : `M${a.x} ${a.bottom}V${turn}H${b.x}V${b.top}`;
+        if (a.lane === "both" || b.lane === "both")
+          parts.push({ d, x1: xT, y1: 0, x2: xA, y2: 0, from: TONE.trader.hex, to: TONE.agent.hex, blend: BLEND });
+        else parts.push({ d, x1: 0, y1: a.bottom, x2: 0, y2: b.top, from: TONE[a.lane].hex, to: TONE[b.lane].hex, blend: [0, 1] });
+      };
+      caps.forEach((c, i) => {
+        const after = caps.slice(i + 1);
+        if (c.lane === "both") {
+          const next = after[0];
+          if (!next) return;
+          if (next.lane === "both") seg(c, next);
+          else
+            for (const lane of ["trader", "agent"] as const) {
+              const n = after.find((a) => a.lane === lane);
+              if (n) seg(c, n, true);
+            }
+        } else {
+          const n = after.find((a) => a.lane === c.lane || a.lane === "both");
+          if (n) seg(c, n);
+        }
+      });
+
+      setRails(parts);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [grid]);
+  return rails;
+}
+
 export function ScheduleSection({ lang }: { lang: WicLang }) {
   const items: Item[] = [
     { who: "both", icon: "entry", start: "2026-10-15", end: "2026-11-15", row: 1, minH: "min-h-[6.5rem]", title: pick(lang, "Entries open", "エントリー受付") },
@@ -68,8 +191,6 @@ export function ScheduleSection({ lang }: { lang: WicLang }) {
     { who: "both", icon: "report", start: "2027-03-26", end: "2027-03-31", row: 6, minH: "min-h-[4.5rem]", title: pick(lang, "Final reports", "最終レポート提出") },
     { who: "both", icon: "awards", start: "2027-04-22", row: 7, title: pick(lang, "Closing and awards ceremony, Tokyo", "閉会式・表彰式（東京）") },
   ];
-  /** The date each phase (grid row) starts, shown on the left; none where it repeats the row above */
-  const phases: Record<number, string> = { 1: "2026-10-15", 2: "2026-12-07", 4: "2027-01-04", 5: "2027-02-01", 6: "2027-03-26", 7: "2027-04-22" };
 
   const whoLabel: Record<Who, string> = {
     both: pick(lang, "Both divisions", "両部門"),
@@ -91,18 +212,14 @@ export function ScheduleSection({ lang }: { lang: WicLang }) {
     return lang === "ja" ? `${a.m}月${a.d}日〜${b.m}月${b.d}日` : `${a.mon} ${a.d} – ${b.mon} ${b.d}`;
   };
 
-  // Dates shown down the middle, in order; the year only where it changes
-  const shownDates = [...new Set([...items.filter((it) => it.who === "both").map((it) => it.start), ...Object.values(phases)])].sort();
-  const yearShown = new Set(shownDates.filter((iso, i) => i === 0 || shownDates[i - 1].slice(0, 4) !== iso.slice(0, 4)));
-  const DateMark = ({ iso }: { iso: string }) => (
-    <p className="m-0 pt-1.5 text-center">
-      <span className="block whitespace-nowrap text-[0.9rem] font-semibold leading-tight tabular-nums sm:text-[1.05rem]">{fmt(iso)}</span>
-      {yearShown.has(iso) && <span className="block text-[0.75rem] text-wic-muted tabular-nums">{iso.slice(0, 4)}</span>}
-    </p>
-  );
+  /** The first item of each year gives the year in its period line. */
+  const yearFirst = new Set(items.filter((it, i) => i === 0 || !items.slice(0, i).some((o) => o.start.slice(0, 4) === it.start.slice(0, 4))));
+  /** One style for every date on the timeline: the period under each name. */
+  const DATE_CLS = "text-[0.72rem] font-normal text-wic-muted tabular-nums sm:text-[0.82rem]";
   const Capsule = ({ it }: { it: Item }) => (
     <span
-      className={`flex w-8 flex-none items-center justify-center rounded-full text-[#f2f2f2] sm:w-11 ${TONE[it.who].fill} ${
+      data-lane={it.who}
+      className={`relative z-10 flex w-8 flex-none items-center justify-center rounded-full text-[#f2f2f2] sm:w-11 ${TONE[it.who].fill} ${
         it.end ? "self-stretch" : "h-8 sm:h-11"
       }`}
     >
@@ -111,14 +228,35 @@ export function ScheduleSection({ lang }: { lang: WicLang }) {
       </svg>
     </span>
   );
-  const when = (it: Item) => (it.end ? range(it.start, it.end) : fmt(it.start));
+  const when = (it: Item) => {
+    const w = it.end ? range(it.start, it.end) : fmt(it.start);
+    return yearFirst.has(it) ? (lang === "ja" ? `${it.start.slice(0, 4)}年${w}` : `${w}, ${it.start.slice(0, 4)}`) : w;
+  };
   const titleCls = "m-0 text-[0.92rem] font-semibold leading-[1.3] sm:text-[1.1rem]";
-  const subCls = "m-0 mt-0.5 text-[0.72rem] text-wic-muted tabular-nums sm:text-[0.85rem]";
+  const subCls = `m-0 mt-0.5 ${DATE_CLS}`;
+
+  const gridRef = useRef<HTMLDivElement>(null);
+  const rails = useRails(gridRef);
 
   return (
     <Section id="schedule" title={pick(lang, "From entry to the awards in Tokyo.", "エントリーから東京での表彰式まで。")}>
-      {/* Trader lane | dates | AI Agent lane. Capsules sit against the middle column. */}
-      <div className="mx-auto grid max-w-[48rem] grid-cols-[minmax(0,1fr)_4rem_minmax(0,1fr)] gap-x-2 gap-y-2.5 sm:grid-cols-[minmax(0,1fr)_6rem_minmax(0,1fr)] sm:gap-x-4">
+      {/* Trader lane | middle | AI Agent lane. Lane capsules sit against the middle
+          column, so a shared capsule there is centred between the lanes. */}
+      <div ref={gridRef} className="relative mx-auto grid max-w-[48rem] grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,1fr)] gap-x-2 gap-y-2.5 sm:grid-cols-[minmax(0,1fr)_4rem_minmax(0,1fr)] sm:gap-x-4">
+        <svg aria-hidden="true" className="pointer-events-none absolute inset-0 size-full overflow-visible">
+          <defs>
+            {rails.map((r, i) => (
+              <linearGradient key={i} id={`rail-${i}`} gradientUnits="userSpaceOnUse" x1={r.x1} y1={r.y1} x2={r.x2} y2={r.y2}>
+                {oklchSteps(r.from, r.to).map((c, k, all) => (
+                  <stop key={k} offset={r.blend[0] + (r.blend[1] - r.blend[0]) * (k / (all.length - 1))} stopColor={c} />
+                ))}
+              </linearGradient>
+            ))}
+          </defs>
+          {rails.map((r, i) => (
+            <path key={i} d={r.d} fill="none" stroke={`url(#rail-${i})`} strokeWidth="3" strokeLinejoin="round" />
+          ))}
+        </svg>
         <p className="m-0 flex items-center justify-end gap-2 pb-2 text-[0.78rem] font-medium text-wic-muted sm:text-[0.88rem]" style={{ gridColumn: 1, gridRow: 1 }}>
           {whoLabel.trader}
           <span aria-hidden="true" className={`size-2.5 flex-none rounded-full ${TONE.trader.fill}`} />
@@ -128,33 +266,19 @@ export function ScheduleSection({ lang }: { lang: WicLang }) {
           {whoLabel.agent}
         </p>
 
-        {/* Start dates of the phases where the lanes run separately */}
-        {Object.entries(phases)
-          .filter(([row]) => !items.some((it) => it.who === "both" && it.row === Number(row)))
-          .map(([row, iso]) => (
-            <div key={row} style={{ gridColumn: 2, gridRow: Number(row) + 1 }}>
-              <DateMark iso={iso} />
-            </div>
-          ))}
-
         {items.map((it, i) => {
           const area = { gridRow: `${it.row + 1} / span ${it.span ?? 1}` };
           if (it.who === "both") {
-            // Across the whole width: title on the trader side, date in the middle,
-            // "both divisions" and the dates on the agent side
+            // One capsule in the middle column, what it is on the right
             return (
               <div key={i} className={`col-span-3 grid grid-cols-subgrid ${it.minH ?? ""}`} style={{ gridColumn: "1 / 4", ...area }}>
-                <div className="flex min-w-0 flex-row-reverse gap-2 sm:gap-3.5">
+                <div />
+                <div className="flex items-center justify-center">
                   <Capsule it={it} />
-                  <div className="min-w-0 pt-1 text-right"><p className={titleCls}>{it.title}</p></div>
                 </div>
-                <DateMark iso={it.start} />
-                <div className="flex min-w-0 gap-2 sm:gap-3.5">
-                  <Capsule it={it} />
-                  <div className="min-w-0 pt-1">
-                    <p className={`m-0 text-[0.72rem] font-medium sm:text-[0.82rem] ${TONE.both.text}`}>{whoLabel.both}</p>
-                    <p className={subCls}>{when(it)}</p>
-                  </div>
+                <div className="min-w-0 self-center">
+                  <p className={titleCls}>{it.title}</p>
+                  <p className={subCls}>{when(it)}</p>
                 </div>
               </div>
             );
@@ -167,7 +291,7 @@ export function ScheduleSection({ lang }: { lang: WicLang }) {
               style={{ gridColumn: trader ? 1 : 3, ...area }}
             >
               <Capsule it={it} />
-              <div className={`min-w-0 pt-1 ${trader ? "text-right" : ""}`}>
+              <div className={`min-w-0 self-center ${trader ? "text-right" : ""}`}>
                 <p className={titleCls}>{it.title}</p>
                 <p className={subCls}>{when(it)}</p>
               </div>
