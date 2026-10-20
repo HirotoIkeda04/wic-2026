@@ -7,7 +7,7 @@ export function LastYear({ lang }: { lang: WicLang }) {
   return (
     <Section
       id="last-year"
-      title={pick(lang, "Last year, students from 9 countries traded against each other.", "昨年は9か国の学生が競い合った。")}
+      title={pick(lang, "Last year, 16 universities from 9 countries took part.", "昨年は9か国から16大学が参加した。")}
       className="overflow-hidden"
     >
       {/* Phones: globe, then the text. Wide screens: text left, globe right. */}
@@ -20,8 +20,8 @@ export function LastYear({ lang }: { lang: WicLang }) {
           <p className="m-0 text-[1.05rem] leading-[1.7]">
             {pick(
               lang,
-              "16 universities took part, from Germany, Switzerland, the UK, Canada, the US, India, Australia, Malaysia and Japan. LMU Investment Club from Munich won with a return of +33.3% and came to Tokyo for the awards.",
-              "ドイツ、スイス、イギリス、カナダ、アメリカ、インド、オーストラリア、マレーシア、日本の16大学が参加した。優勝した LMU Investment Club（ミュンヘン）は +33.3% のリターンを上げ、表彰式のため東京を訪れた。",
+              "The universities came from Germany, Switzerland, the UK, Canada, the US, India, Australia, Malaysia and Japan. LMU Investment Club from Munich won with a return of +33.3% and came to Tokyo for the awards.",
+              "参加国はドイツ、スイス、イギリス、カナダ、アメリカ、インド、オーストラリア、マレーシア、日本。優勝した LMU Investment Club（ミュンヘン）は +33.3% のリターンを上げ、表彰式のため東京を訪れた。",
             )}
           </p>
           <div className="mt-8 flex justify-end">

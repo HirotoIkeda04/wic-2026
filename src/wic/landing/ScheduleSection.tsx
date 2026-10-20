@@ -245,7 +245,7 @@ export function ScheduleSection({ lang }: { lang: WicLang }) {
   const rails = useRails(gridRef);
 
   return (
-    <Section id="schedule" title={pick(lang, "From entry to the awards in Tokyo.", "エントリーから東京での表彰式まで。")}>
+    <Section id="schedule" title={pick(lang, "Schedule", "日程")}>
       {/* Trader lane | middle | AI Agent lane. Lane capsules sit against the middle
           column, so a shared capsule there is centred between the lanes. The middle
           column is narrower than a capsule: shared capsules spill over its edges,
@@ -265,11 +265,11 @@ export function ScheduleSection({ lang }: { lang: WicLang }) {
             <path key={i} d={r.d} fill="none" stroke="rgb(242 242 242 / 0.2)" strokeWidth="1.5" strokeLinejoin="round" />
           ))}
         </svg>
-        <p className="m-0 flex items-center justify-end gap-2 pb-2 text-[0.78rem] font-medium text-wic-muted sm:text-[0.88rem]" style={{ gridColumn: 1, gridRow: 1 }}>
+        <p className="m-0 flex items-center justify-end gap-2 pb-2 pr-5 text-[0.78rem] font-medium text-wic-muted sm:text-[0.88rem]" style={{ gridColumn: 1, gridRow: 1 }}>
           {whoLabel.trader}
           <span aria-hidden="true" className={`size-2.5 flex-none rounded-full ${TONE.trader.fill}`} />
         </p>
-        <p className="m-0 flex items-center gap-2 pb-2 text-[0.78rem] font-medium text-wic-muted sm:text-[0.88rem]" style={{ gridColumn: 3, gridRow: 1 }}>
+        <p className="m-0 flex items-center gap-2 pb-2 pl-5 text-[0.78rem] font-medium text-wic-muted sm:text-[0.88rem]" style={{ gridColumn: 3, gridRow: 1 }}>
           <span aria-hidden="true" className={`size-2.5 flex-none rounded-full ${TONE.agent.fill}`} />
           {whoLabel.agent}
         </p>

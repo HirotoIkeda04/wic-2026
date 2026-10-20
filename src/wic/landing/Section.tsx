@@ -1,23 +1,26 @@
 import type { ReactNode } from "react";
 
-/** A landing section: heading, then free-form content. */
+/** A landing section: heading (named as in the menu), an optional one-line lead, then free-form content. */
 export function Section({
   id,
   title,
+  lead,
   children,
   className = "",
 }: {
   id: string;
   title: ReactNode;
+  lead?: ReactNode;
   children: ReactNode;
   className?: string;
 }) {
   return (
     <section id={id} aria-labelledby={`${id}-title`} className={`scroll-mt-16 border-t border-wic-line ${className}`}>
       <div className="mx-auto max-w-[72rem] px-5 py-20 sm:px-8 sm:py-28">
-        <h2 id={`${id}-title`} className="mb-10 max-w-[18em] text-[clamp(2rem,5vw,3.25rem)] font-semibold leading-[1.05] tracking-[-0.025em] [text-wrap:balance]">
+        <h2 id={`${id}-title`} className={`${lead ? "mb-3" : "mb-10"} max-w-[18em] text-[clamp(2rem,5vw,3.25rem)] font-semibold leading-[1.05] tracking-[-0.025em] [text-wrap:balance]`}>
           {title}
         </h2>
+        {lead && <p className="mb-10 mt-0 max-w-[32em] text-[clamp(1.05rem,2.4vw,1.3rem)] leading-[1.5] text-wic-muted">{lead}</p>}
         {children}
       </div>
     </section>

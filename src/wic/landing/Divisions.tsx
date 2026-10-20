@@ -39,7 +39,11 @@ export function Divisions({ lang }: { lang: WicLang }) {
     },
   ];
   return (
-    <Section id="divisions" title={pick(lang, "Two ways to compete.", "2つの部門。")}>
+    <Section
+      id="divisions"
+      title={pick(lang, "Divisions", "部門")}
+      lead={pick(lang, "Trade yourself, or build an agent that trades.", "自分で取引するか、取引するエージェントをつくるか。")}
+    >
       <div className="grid gap-5 md:grid-cols-2">
         {cards.map((c) => (
           <article key={c.slug} className="flex flex-col overflow-hidden rounded-2xl border border-wic-line bg-wic-ink/[0.03]">

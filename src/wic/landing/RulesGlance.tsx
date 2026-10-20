@@ -21,7 +21,7 @@ export function RulesGlance({ lang }: { lang: WicLang }) {
     },
   ];
   return (
-    <Section id="rules" title={pick(lang, "The same rules for both divisions.", "ルールは両部門で共通。")}>
+    <Section id="rules" title={pick(lang, "Common Rules", "共通ルール")}>
       <div className="grid gap-px overflow-hidden rounded-2xl border border-wic-line bg-wic-line md:grid-cols-3">
         {items.map((it) => (
           <div key={it.head} className="bg-wic-bg p-7 sm:p-8">
