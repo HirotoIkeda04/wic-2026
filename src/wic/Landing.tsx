@@ -3,6 +3,7 @@ import { WicHeader } from "./WicHeader";
 import { WicPage } from "./WicPage";
 import type { WicLang } from "./lang";
 import { Divisions } from "./landing/Divisions";
+import { EntrySection } from "./landing/EntrySection";
 import { Hero } from "./landing/Hero";
 import { LastYear } from "./landing/LastYear";
 import { Prize } from "./landing/Prize";
@@ -23,6 +24,7 @@ export function Landing({ lang }: { lang: WicLang }) {
         <Divisions lang={lang} />
         <RulesGlance lang={lang} />
         <ScheduleSection lang={lang} />
+        <EntrySection lang={lang} />
       </main>
       <WicFooter lang={lang} />
     </WicPage>
