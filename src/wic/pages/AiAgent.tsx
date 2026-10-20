@@ -22,7 +22,7 @@ export default function AiAgent({ lang }: { lang: WicLang }) {
 function En() {
   return (
     <>
-<p className="muted">This page covers what is specific to the AI Agent division. Read it together with the <a href={wicHref("en", "rules")}>Rules</a>, which apply to both divisions. The AI Agent division is co-hosted with the Waseda AI Society.</p>
+<p className="muted">This page covers what is specific to the AI Agent division. Read it together with the <a href={wicHref("en", "rules")}>Rules</a>, which apply to both divisions. The AI Agent division is co-hosted with 早稲田AI研究会, a student AI club at Waseda University.</p>
 
 <h2>Team and account</h2>
 <p>One to three students per team. Each team gets one $1M Interactive Brokers demo account, provided by the organizers.</p>

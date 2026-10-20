@@ -96,8 +96,9 @@ export function Hero({ lang }: { lang: WicLang }) {
           </dd>
           <dt className={stripLabel}>{pick(lang, "Organizer", "主催")}</dt>
           <dd className="m-0 text-[0.62rem] text-black sm:text-[0.68rem]">JPSI</dd>
-          <dt className={stripLabel}>{pick(lang, "Co-host", "共催")}</dt>
-          <dd className="m-0 text-[0.62rem] text-black sm:text-[0.68rem]">
+          {/* Organizer and co-host sit closer together than the sponsor rows above */}
+          <dt className={`${stripLabel} -mt-2`}>{pick(lang, "Co-host", "共催")}</dt>
+          <dd className="m-0 -mt-2 text-[0.62rem] text-black sm:text-[0.68rem]">
             {SITE.coHost[lang]}
             <span className="text-black/55">{pick(lang, " (AI Agent division)", "（AIエージェント部門）")}</span>
           </dd>

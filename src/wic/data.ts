@@ -19,7 +19,7 @@ export const SITE = {
     en: "Japan Students Investment Union (JPSI)",
     ja: "一般社団法人 全日本学生投資連盟（JPSI）",
   },
-  coHost: { en: "Waseda AI Society", ja: "早稲田AI研究会" },
+  coHost: { en: "早稲田AI研究会", ja: "早稲田AI研究会" },
   /** First sentence of the description; shown on the poster */
   lead: {
     en: "University teams from around the world compete in U.S. stock demo trading, ranked on both returns and investment reports.",
