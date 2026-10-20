@@ -69,6 +69,8 @@ export function Hero({ lang }: { lang: WicLang }) {
       <div aria-hidden="true" className="relative z-10 -mb-px h-6 sm:h-8" style={{ background: STRIP_FADE }}>
         {/* The grain is strongest mid-way and fades out at both ends, so it leaves no seam */}
         <div className="absolute inset-0 opacity-50 [background-image:var(--wic-noise)] [background-size:160px] [mask-image:linear-gradient(to_bottom,transparent,black_35%,black_65%,transparent)]" />
+        {/* White specks (--wic-speck) rising into the black above, densest at the edge, like dye bleeding into paper */}
+        <div className="absolute inset-x-0 -top-6 bottom-0 opacity-80 [background-image:var(--wic-speck)] [background-size:80px] [mask-image:linear-gradient(to_bottom,transparent,rgb(0_0_0/0.45)_45%,black_80%,transparent)] sm:-top-10" />
       </div>
 
       {/* 2026 sponsors are not confirmed yet; these are last year's. */}
