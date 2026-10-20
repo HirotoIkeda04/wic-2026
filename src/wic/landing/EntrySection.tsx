@@ -1,7 +1,7 @@
-import { SITE, wicHref } from "../data";
+import { SITE } from "../data";
 import { pick, type WicLang } from "../lang";
 import { EntryStatus } from "./EntryStatus";
-import { MoreLink, Section } from "./Section";
+import { Section } from "./Section";
 
 /**
  * The closing call to enter, after the schedule: under the usual section
@@ -30,9 +30,6 @@ export function EntrySection({ lang }: { lang: WicLang }) {
         >
           {pick(lang, "Open the entry form", "エントリーフォームを開く")} <span aria-hidden="true">→</span>
         </a>
-      </div>
-      <div className="mt-6 flex justify-end">
-        <MoreLink href={wicHref(lang, "rules")}>{pick(lang, "Eligibility and rules", "参加資格とルール")}</MoreLink>
       </div>
     </Section>
   );
