@@ -212,8 +212,13 @@ export function ScheduleSection({ lang }: { lang: WicLang }) {
     return lang === "ja" ? `${a.m}月${a.d}日〜${b.m}月${b.d}日` : `${a.mon} ${a.d} – ${b.mon} ${b.d}`;
   };
 
-  /** The first item of each year gives the year in its period line. */
-  const yearFirst = new Set(items.filter((it, i) => i === 0 || !items.slice(0, i).some((o) => o.start.slice(0, 4) === it.start.slice(0, 4))));
+  /** The first item of each year on each lane gives the year in its period line. */
+  // Per lane: an item shows the year when nothing earlier on its own line (its
+  // lane or the shared items; every lane for a shared item) starts in that year.
+  const onLine = (a: Item, b: Item) => a.who === "both" || b.who === "both" || a.who === b.who;
+  const yearFirst = new Set(
+    items.filter((it, i) => !items.slice(0, i).some((o) => onLine(o, it) && o.start.slice(0, 4) === it.start.slice(0, 4))),
+  );
   /** One style for every date on the timeline: the period under each name. */
   const DATE_CLS = "text-[0.72rem] font-normal text-wic-muted tabular-nums sm:text-[0.82rem]";
   const Capsule = ({ it }: { it: Item }) => (
