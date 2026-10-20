@@ -30,13 +30,14 @@ const ICONS = {
 type Who = "both" | "trader" | "agent";
 
 /** Division colours: red for traders, purple for agents, red into purple for both. */
-const TONE: Record<Who, { fill: string; text: string; hex: string }> = {
-  trader: { fill: "bg-[#c4484f]", text: "text-[#e2878b]", hex: "#c4484f" },
-  agent: { fill: "bg-[#7656c2]", text: "text-[#ac95e4]", hex: "#7656c2" },
+const TONE: Record<Who, { fill: string; text: string; hex: string; capsule: string }> = {
+  trader: { fill: "bg-[#c4484f]", text: "text-[#e2878b]", hex: "#c4484f", capsule: "border-[#c4484f]/70 bg-[#3a1b1e] text-[#e2878b]" },
+  agent: { fill: "bg-[#7656c2]", text: "text-[#ac95e4]", hex: "#7656c2", capsule: "border-[#7656c2]/75 bg-[#261f3f] text-[#ac95e4]" },
   // Both divisions: the OKLCH midpoint of the trader red and the agent purple.
   // (Trial; the gradient it replaces was
   // "bg-[linear-gradient(in_oklch_to_right,#c4484f_20%,#7656c2_80%)]".)
-  both: { fill: "bg-[color-mix(in_oklch,#c4484f,#7656c2)]", text: "text-[#b4b4b4]", hex: "" },
+  // Capsules for both are a neutral dark grey with a pale edge.
+  both: { fill: "bg-[color-mix(in_oklch,#c4484f,#7656c2)]", text: "text-[#b4b4b4]", hex: "", capsule: "border-[#f2f2f2]/35 bg-[#2a2928] text-[#f2f2f2]" },
 };
 
 /*
@@ -224,11 +225,11 @@ export function ScheduleSection({ lang }: { lang: WicLang }) {
   const Capsule = ({ it }: { it: Item }) => (
     <span
       data-lane={it.who}
-      className={`relative z-10 flex w-8 flex-none items-center justify-center rounded-full text-[#f2f2f2] sm:w-11 ${TONE[it.who].fill} ${
+      className={`relative z-10 flex w-8 flex-none items-center justify-center rounded-full border sm:w-11 ${TONE[it.who].capsule} ${
         it.end ? "self-stretch" : "h-8 sm:h-11"
       }`}
     >
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="sm:size-5">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="sm:size-5">
         {ICONS[it.icon]}
       </svg>
     </span>
@@ -259,7 +260,7 @@ export function ScheduleSection({ lang }: { lang: WicLang }) {
             ))}
           </defs>
           {rails.map((r, i) => (
-            <path key={i} d={r.d} fill="none" stroke={`url(#rail-${i})`} strokeWidth="3" strokeLinejoin="round" />
+            <path key={i} d={r.d} fill="none" stroke="rgb(242 242 242 / 0.2)" strokeWidth="1.5" strokeLinejoin="round" />
           ))}
         </svg>
         <p className="m-0 flex items-center justify-end gap-2 pb-2 text-[0.78rem] font-medium text-wic-muted sm:text-[0.88rem]" style={{ gridColumn: 1, gridRow: 1 }}>
