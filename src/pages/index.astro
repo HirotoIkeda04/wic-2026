@@ -1,8 +1,11 @@
 ---
 import Base from '../layouts/Base.astro';
-import { landingHead, WicLanding } from '../wic/routes';
+import { Landing } from '../wic/Landing';
+import { landingHead } from '../wic/routes';
 ---
 
+<!-- The island is Landing itself, not WicLanding from routes.tsx: that module
+     also imports the five detail pages, which would end up in the landing's bundle. -->
 <Base {...landingHead('en')}>
-  <WicLanding lang="en" client:load />
+  <Landing lang="en" client:load />
 </Base>
