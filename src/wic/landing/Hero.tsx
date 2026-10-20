@@ -12,22 +12,12 @@ const sponsors = [
 ];
 
 /**
- * Darkens the top of the photo a little for the header, and fades its bottom
- * into the black under it. The stops follow an eased curve rather than a
- * straight line, so the edge of the fade is not visible.
+ * The photo's shade, as on the JPSI site's WIC poster (.p-stage::before in
+ * components/wic/wic.css): dark at the top behind the header, clear through the
+ * middle where the people stand, then into the black under the photo.
  */
-const EASE = [1, 0.738, 0.541, 0.382, 0.278, 0.194, 0.126, 0.075, 0.042, 0.021, 0.008, 0.002, 0];
-function fade(from: number, to: number, max = 1) {
-  return EASE.map((a, i) => `rgb(12 11 11 / ${(a * max).toFixed(3)}) ${(from + ((to - from) * i) / (EASE.length - 1)).toFixed(1)}%`);
-}
-/** A light, even shade over the top third of the photo (cosine ease, so it has no visible edge). */
-function topShade(to: number, max: number) {
-  return Array.from({ length: 9 }, (_, i) => {
-    const t = i / 8;
-    return `rgb(12 11 11 / ${(max * (0.5 + 0.5 * Math.cos(Math.PI * t))).toFixed(3)}) ${(to * t).toFixed(1)}%`;
-  });
-}
-const PHOTO_FADE = `linear-gradient(to bottom, ${[...topShade(33.3, 0.5), ...fade(100, 45).reverse()].join(", ")})`;
+const PHOTO_FADE =
+  "linear-gradient(to bottom, rgb(0 0 0 / 0.78) 0%, rgb(0 0 0 / 0.35) 38%, rgb(0 0 0 / 0) 58%, rgb(0 0 0 / 0) 72%, rgb(12 11 11 / 0.75) 90%, #0c0b0b 100%)";
 
 /** Black into the paper colour of the sponsor strip, eased at both ends (a cosine curve). */
 const STRIP_FADE = `linear-gradient(to bottom, ${Array.from({ length: 17 }, (_, i) => {
@@ -57,6 +47,8 @@ export function Hero({ lang }: { lang: WicLang }) {
             className="block size-full object-cover object-[58%_0%] sm:h-auto"
           />
           <div aria-hidden="true" className="absolute inset-0" style={{ background: PHOTO_FADE }} />
+          {/* Grain over the photo, as on the JPSI site's poster (.wic-poster::after at rest) */}
+          <div aria-hidden="true" className="absolute inset-0 opacity-[0.22] mix-blend-overlay [background-image:var(--wic-noise)] [background-size:220px]" />
         </div>
         <div className="relative mx-auto w-full max-w-[72rem] px-5 pb-3 text-[#f2f2f2] sm:px-8 sm:pb-5">
           <h1 className="mx-0 -mt-[1.1em] mb-0 text-[clamp(2.6rem,9vw,6.5rem)] font-black uppercase leading-[0.92] tracking-[-0.03em]">
@@ -74,13 +66,13 @@ export function Hero({ lang }: { lang: WicLang }) {
       </div>
 
       {/* Black to paper, with grain (--wic-noise in wic.css) so the change of tone has no clean edge */}
-      <div aria-hidden="true" className="relative z-10 -mb-px h-12 sm:h-16" style={{ background: STRIP_FADE }}>
+      <div aria-hidden="true" className="relative z-10 -mb-px h-6 sm:h-8" style={{ background: STRIP_FADE }}>
         {/* The grain is strongest mid-way and fades out at both ends, so it leaves no seam */}
         <div className="absolute inset-0 opacity-50 [background-image:var(--wic-noise)] [background-size:160px] [mask-image:linear-gradient(to_bottom,transparent,black_35%,black_65%,transparent)]" />
       </div>
 
       {/* 2026 sponsors are not confirmed yet; these are last year's. */}
-      <div className="bg-[#f6f5f2] px-5 pb-5 pt-0 text-[#1d1b1b] sm:px-8">
+      <div className="bg-[#f6f5f2] px-5 pb-5 pt-6 text-[#1d1b1b] sm:px-8 sm:pt-8">
         {/* Two rows, each a label on the left and its content to the right. The
             sponsor logos sit in equal cells: 3 + 2 on phones, one row of 5 from sm up. */}
         <dl className="mx-auto my-0 grid max-w-[72rem] grid-cols-[auto_1fr] items-center gap-x-5 gap-y-4 sm:gap-x-8 sm:text-[1.2rem]">
