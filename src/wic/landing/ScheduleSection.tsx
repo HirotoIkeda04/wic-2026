@@ -305,11 +305,12 @@ export function ScheduleSection({ lang }: { lang: WicLang }) {
 
   return (
     <Section id="schedule" title={pick(lang, "Schedule", "日程")}>
-      {/* Trader lane | middle | AI Agent lane. Lane capsules sit against the middle
+      {/* Trader lane | middle | AI Agent lane, the middle set a little left of centre (0.9 : 1.1) because
+          the shared items' labels hang off to the right. Lane capsules sit against the middle
           column, so a shared capsule there is centred between the lanes. The middle
           column is narrower than a capsule: shared capsules spill over its edges,
           which is fine as they never share a row with a lane capsule. */}
-      <div className="mx-auto grid max-w-[48rem] grid-cols-[minmax(0,1fr)_1.25rem_minmax(0,1fr)] gap-x-1 pb-3 sm:grid-cols-[minmax(0,1fr)_2rem_minmax(0,1fr)] sm:gap-x-2">
+      <div className="mx-auto grid max-w-[48rem] grid-cols-[minmax(0,0.9fr)_1.25rem_minmax(0,1.1fr)] gap-x-1 pb-3 sm:grid-cols-[minmax(0,0.9fr)_2rem_minmax(0,1.1fr)] sm:gap-x-2">
         <p className="m-0 flex items-center justify-end gap-2 pr-1 text-[0.78rem] font-medium text-wic-muted sm:text-[0.88rem]">
           <span aria-hidden="true" className={`size-2.5 flex-none rounded-full ${TONE.trader.fill}`} />
           {whoLabel.trader}
@@ -322,7 +323,7 @@ export function ScheduleSection({ lang }: { lang: WicLang }) {
       </div>
       <div
         ref={gridRef}
-        className="relative mx-auto grid max-w-[48rem] grid-cols-[minmax(0,1fr)_1.25rem_minmax(0,1fr)] gap-x-1 [--day:3.4px] sm:grid-cols-[minmax(0,1fr)_2rem_minmax(0,1fr)] sm:gap-x-2 sm:[--day:3.9px]"
+        className="relative mx-auto grid max-w-[48rem] grid-cols-[minmax(0,0.9fr)_1.25rem_minmax(0,1.1fr)] gap-x-1 [--day:3.4px] sm:grid-cols-[minmax(0,0.9fr)_2rem_minmax(0,1.1fr)] sm:gap-x-2 sm:[--day:3.9px]"
         style={{ gridTemplateRows: `repeat(${ROWS}, var(--day))` }}
       >
         {/* Months across the full width (no month names): a sparse dotted line at each month's start,
