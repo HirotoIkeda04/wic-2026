@@ -14,7 +14,7 @@ export function Prize({ lang }: { lang: WicLang }) {
     },
     {
       who: pick(lang, "AI Agent division, 1st – 3rd", "AIエージェント部門 1〜3位"),
-      what: pick(lang, "ChatGPT Pro or Claude Max for up to 12 months, for every member", "メンバー全員に ChatGPT Pro または Claude Max を最大12か月"),
+      what: pick(lang, "Subscriptions such as ChatGPT Pro or Claude Max for up to 12 months, for every member", "メンバー全員に ChatGPT Pro や Claude Max などのサブスクリプションを最大12か月分"),
     },
   ];
   const figure = <SlotNumber value="$10,000" />;

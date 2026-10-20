@@ -20,8 +20,8 @@ export function LastYear({ lang }: { lang: WicLang }) {
           <p className="m-0 text-[1.05rem] leading-[1.7]">
             {pick(
               lang,
-              "The universities came from Germany, Switzerland, the UK, Canada, the US, India, Australia, Malaysia and Japan. LMU Investment Club from Munich won with a return of +33.3% and came to Tokyo for the awards.",
-              "参加国はドイツ、スイス、イギリス、カナダ、アメリカ、インド、オーストラリア、マレーシア、日本。優勝した LMU Investment Club（ミュンヘン）は +33.3% のリターンを上げ、表彰式のため東京を訪れた。",
+              "The universities came from Germany, Switzerland, the UK, Canada, the US, India, Australia, Malaysia and Japan. LMU Investment Club from Munich won with a return of +33.3%.",
+              "参加国はドイツ、スイス、イギリス、カナダ、アメリカ、インド、オーストラリア、マレーシア、日本。ミュンヘンの LMU Investment Club が +33.3% のリターンで優勝した。",
             )}
           </p>
           <div className="mt-8 flex justify-end">

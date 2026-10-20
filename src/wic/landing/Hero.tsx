@@ -29,7 +29,7 @@ const STRIP_FADE = `linear-gradient(to bottom, ${Array.from({ length: 17 }, (_, 
 
 const stripLabel = "self-stretch flex items-center border-r border-black/20 pr-5 text-[0.62rem] text-black/70 sm:pr-8 sm:text-[0.68rem]";
 
-/** First screen: photo, title, the deadline, and a strip with last year's sponsor logos, the organizer and the co-host. */
+/** First screen: photo, title, the deadline, and a strip with the sponsor logos, the organizer and the co-host. */
 export function Hero({ lang }: { lang: WicLang }) {
   return (
     // From lg up the whole hero, sponsor strip included, fills exactly one
@@ -76,7 +76,7 @@ export function Hero({ lang }: { lang: WicLang }) {
         <div className="absolute inset-0 opacity-50 [background-image:var(--wic-noise)] [background-size:160px] [mask-image:linear-gradient(to_bottom,transparent,black_35%,black_65%,transparent)]" />
       </div>
 
-      {/* 2026 sponsors are not confirmed yet; these are last year's. */}
+      {/* The sponsors confirmed for 2026 so far; more may join, none will drop out. */}
       <div className="bg-[#f6f5f2] px-5 pb-5 pt-6 text-[#1d1b1b] sm:px-8 sm:pt-8">
         {/* Two rows, each a label on the left and its content to the right. The
             sponsor logos sit in equal cells: 3 + 2 on phones, one row of 5 on small
@@ -87,7 +87,7 @@ export function Hero({ lang }: { lang: WicLang }) {
           <dd className="m-0 min-w-0">
             <ul
               className="m-0 grid list-none grid-cols-3 items-center justify-items-center gap-x-4 gap-y-4 p-0 sm:grid-cols-5 sm:gap-x-8 md:grid-cols-3 md:gap-y-6 lg:grid-cols-5"
-              aria-label={pick(lang, "WIC2025 Sponsors", "WIC2025 協賛企業")}
+              aria-label={pick(lang, "Sponsors", "協賛企業")}
             >
               {sponsors.map((s) => (
                 <li key={s.alt} className="min-w-0">

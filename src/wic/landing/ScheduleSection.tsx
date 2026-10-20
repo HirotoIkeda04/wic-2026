@@ -221,7 +221,7 @@ export function ScheduleSection({ lang }: { lang: WicLang }) {
     { who: "agent", icon: "trial", start: "2027-01-04", end: "2027-01-31", title: pick(lang, "Trial run", "試運転") },
     { who: "agent", icon: "agent", start: "2027-02-01", end: "2027-03-25", title: pick(lang, "Live trading", "本番取引") },
     { who: "both", icon: "report", start: "2027-03-26", end: "2027-03-31", title: pick(lang, "Final reports", "最終レポート提出") },
-    { who: "both", icon: "awards", start: "2027-04-22", title: pick(lang, "Closing and awards ceremony, Tokyo", "閉会式・表彰式（東京）") },
+    { who: "both", icon: "awards", start: "2027-04-22", title: pick(lang, "Closing and awards ceremony", "閉会式・表彰式") },
   ];
   const last = items[items.length - 1];
   /** Rows an item takes. A period runs from its first day through its last (at least MIN_DAYS);

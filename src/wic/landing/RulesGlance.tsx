@@ -7,7 +7,7 @@ export function RulesGlance({ lang }: { lang: WicLang }) {
     {
       big: "Nasdaq",
       head: pick(lang, "What you trade", "取引対象"),
-      body: pick(lang, "Stocks, ETFs and options listed on Nasdaq, in an Interactive Brokers paper trading account. Leverage up to 4x intraday.", "Nasdaq 上場の株式・ETF・オプション。Interactive Brokers のデモ口座で取引する。日中のレバレッジは最大4倍。"),
+      body: pick(lang, "Nasdaq-listed stocks and ETFs, and options on them, in an Interactive Brokers demo account. Leverage up to 4x intraday.", "Nasdaq上場の個別株・ETF、およびこれらを原資産とするオプション。Interactive Brokers のデモ口座で取引する。日中のレバレッジは最大4倍。"),
     },
     {
       big: "70 / 30",
