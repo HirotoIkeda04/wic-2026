@@ -6,6 +6,12 @@ import { MoreLink, Section } from "./Section";
 /** `market`: how the card's band draws the shared price series (see MarketBackdrop). */
 type Card = { slug: WicSlug; market: "chart" | "ascii"; name: string; tagline: string; facts: [string, string][]; note?: string };
 
+/** The division colours of the schedule (red for traders, purple for agents) fill the chart band. */
+const TONE: Record<Card["market"], { band: string; pill: string }> = {
+  chart: { band: "bg-[#c4484f]", pill: "bg-[#c4484f] text-[#f2f2f2]" },
+  ascii: { band: "bg-[#7656c2]", pill: "bg-[#7656c2] text-[#f2f2f2]" },
+};
+
 export function Divisions({ lang }: { lang: WicLang }) {
   const cards: Card[] = [
     {
@@ -40,13 +46,13 @@ export function Divisions({ lang }: { lang: WicLang }) {
         {cards.map((c) => (
           <article key={c.slug} className="flex flex-col overflow-hidden rounded-2xl border border-wic-line bg-wic-ink/[0.03]">
             {/* The same market, read as a chart (trader) or as characters (agent) */}
-            <div className="relative h-44 border-b border-wic-line sm:h-52">
-              <MarketBackdrop mode={c.market} />
+            <div className={`relative h-44 sm:h-52 ${TONE[c.market].band}`}>
+              <MarketBackdrop mode={c.market} ink="255,255,255" />
             </div>
             <div className="flex flex-1 flex-col p-7 sm:p-9">
               <div className="flex items-baseline justify-between gap-4">
                 <h3 className="m-0 text-[1.6rem] font-semibold tracking-[-0.02em]">{c.name}</h3>
-                {c.note && <span className="whitespace-nowrap rounded-full bg-wic-ink px-3 py-1 text-[0.75rem] font-semibold text-wic-bg">{pick(lang, "New", "新設")}</span>}
+                {c.note && <span className={`whitespace-nowrap rounded-full px-3 py-1 text-[0.75rem] font-semibold ${TONE[c.market].pill}`}>{pick(lang, "New", "新設")}</span>}
               </div>
               <p className="m-0 mt-1 text-[1.1rem] text-wic-muted">{c.tagline}</p>
               <dl className="m-0 mt-7 flex-1 divide-y divide-wic-line border-t border-wic-line">

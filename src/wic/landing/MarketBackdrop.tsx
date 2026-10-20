@@ -9,10 +9,10 @@ import { useEffect, useRef } from "react";
  * agent reads it). Both draw themselves from left to right in a loop while on
  * screen; with reduced motion they show the finished drawing.
  *
- * Fills its positioned parent; the colours assume the dark landing page.
+ * Fills its positioned parent and draws in `ink` ("r,g,b"); the default
+ * assumes the dark landing page.
  */
 
-const INK = "242,242,242";
 const MONO = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
 
 function mulberry32(a: number) {
@@ -55,9 +55,9 @@ const LOG = [
   ["model", "drawdown 3.1%, within limit"],
 ];
 
-type Ctx = { g: CanvasRenderingContext2D; w: number; h: number };
+type Ctx = { g: CanvasRenderingContext2D; w: number; h: number; ink: string };
 
-function drawChart({ g, w, h }: Ctx, t: number, still: boolean) {
+function drawChart({ g, w, h, ink: INK }: Ctx, t: number, still: boolean) {
   g.clearRect(0, 0, w, h);
   const top = 14, bot = h - 12, x0 = 4, x1 = w - 4;
   const n = Math.max(2, Math.floor(reveal(t, still) * SERIES.length));
@@ -91,7 +91,7 @@ function drawChart({ g, w, h }: Ctx, t: number, still: boolean) {
   g.fillText(last.toFixed(2), x1 - 2, ly - 6);
 }
 
-function drawAscii({ g, w, h }: Ctx, t: number, still: boolean) {
+function drawAscii({ g, w, h, ink: INK }: Ctx, t: number, still: boolean) {
   g.clearRect(0, 0, w, h);
   g.font = `500 12px ${MONO}`; g.textBaseline = "top"; g.textAlign = "left";
   const cw = Math.max(6, g.measureText("0").width), ch = 15, logH = 40;
@@ -124,7 +124,7 @@ function drawAscii({ g, w, h }: Ctx, t: number, still: boolean) {
   }
 }
 
-export function MarketBackdrop({ mode }: { mode: "chart" | "ascii" }) {
+export function MarketBackdrop({ mode, ink = "242,242,242" }: { mode: "chart" | "ascii"; ink?: string }) {
   const boxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -142,7 +142,7 @@ export function MarketBackdrop({ mode }: { mode: "chart" | "ascii" }) {
       cv.width = Math.round(r.width * d); cv.height = Math.round(r.height * d);
       const g = cv.getContext("2d")!;
       g.setTransform(d, 0, 0, d, 0, 0);
-      ctx = { g, w: r.width, h: r.height };
+      ctx = { g, w: r.width, h: r.height, ink };
     };
     const frame = (now: number) => {
       if (!ctx) size();
@@ -167,7 +167,7 @@ export function MarketBackdrop({ mode }: { mode: "chart" | "ascii" }) {
       ro.disconnect();
       cv.remove();
     };
-  }, [mode]);
+  }, [mode, ink]);
 
   return <div ref={boxRef} aria-hidden="true" className="absolute inset-0" />;
 }
