@@ -16,6 +16,12 @@ const RADIUS = 4;
 const PER_TURN = 13;         // photos per full turn: neighbours on a row nearly touch
 const RISE = 0.13;           // height gained per photo; one turn ≈ one photo height plus a gap
 const COUNT = PER_TURN * 9;  // nine turns
+/**
+ * Share of a photo's width each row is shifted along from the row below. With
+ * a whole number of photos per turn they would stack in straight columns; the
+ * shift turns the columns into diagonals that wind round the helix.
+ */
+const TWIST = 0.4;
 const PLANE_W = 1.9;
 const PLANE_H = PLANE_W * 0.75;
 const BG = 0x0c0b0b;
@@ -130,7 +136,7 @@ export function PhotoVortex({ photos }: { photos: string[] }) {
         return x - Math.floor(x);
       };
       for (let i = 0; i < COUNT; i++) {
-        const a = (i / PER_TURN) * Math.PI * 2;
+        const a = ((i * (1 + TWIST / PER_TURN)) / PER_TURN) * Math.PI * 2;
         const y = (i - COUNT / 2) * RISE;
         const r = RADIUS * (0.85 + 0.35 * jitter(i, 1));
         const mesh = new THREE.Mesh(geo, materials[(i * 3) % materials.length]);
