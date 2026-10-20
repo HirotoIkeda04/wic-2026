@@ -77,14 +77,10 @@ export function Globe({ label }: { label: string }) {
       const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 50);
       camera.position.set(0, 0, 4.4);
 
-      // The axis leans like a desk globe's (Earth's 23.4°, top to the left) and
-      // its north is tipped toward the viewer; the globe spins about that axis.
-      const tilt = new THREE.Group();
-      tilt.rotation.set(0.3, 0, 0.41);
-      scene.add(tilt);
       const globe = new THREE.Group();
+      globe.rotation.x = 0.3;                // tilt the north toward the viewer
       globe.rotation.y = -2.5;               // start over Europe and India
-      tilt.add(globe);
+      scene.add(globe);
       const disposables: { dispose(): void }[] = [];
       const track = <T extends { dispose(): void }>(d: T) => (disposables.push(d), d);
 
@@ -171,7 +167,7 @@ export function Globe({ label }: { label: string }) {
         const { width, height, left } = box.getBoundingClientRect();
         // Labels may hang outside the box, but not off the screen
         const minX = 8 - left, maxX = document.documentElement.clientWidth - left - 8;
-        tilt.updateMatrixWorld();
+        globe.updateMatrixWorld();
         sitePos.forEach((local, i) => {
           const el = labelRefs.current[i];
           if (!el) return;
