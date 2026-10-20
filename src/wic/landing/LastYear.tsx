@@ -12,7 +12,8 @@ export function LastYear({ lang }: { lang: WicLang }) {
     >
       {/* Phones: globe, then the text. Wide screens: text left, globe right. */}
       <div className="grid gap-x-10 lg:grid-cols-[1fr_1.3fr] lg:grid-rows-[1fr_auto_1fr]">
-        <div className="mb-8 lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:mb-0 lg:self-center">
+        {/* The square box leaves empty space above and below the sphere; on phones pull it in */}
+        <div className="-mt-6 mb-2 lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:my-0 lg:self-center">
           <Globe label={pick(lang, "Globe marking the universities that took part in WIC2025", "WIC2025 に参加した大学を示す地球儀")} />
         </div>
         <div className="lg:col-start-1 lg:row-start-2">
