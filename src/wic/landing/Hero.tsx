@@ -54,7 +54,9 @@ export function Hero({ lang }: { lang: WicLang }) {
           <div aria-hidden="true" className="absolute inset-0 opacity-[0.22] mix-blend-overlay [background-image:var(--wic-noise)] [background-size:220px]" />
         </div>
         <div className="relative mx-auto w-full max-w-[72rem] px-5 pb-3 text-[#f2f2f2] sm:px-8 sm:pb-5">
-          <h1 className="mx-0 -mt-[1.1em] mb-0 text-[clamp(2.6rem,9vw,6.5rem)] font-black uppercase leading-[0.92] tracking-[-0.03em]">
+          {/* Warm gold like the stage lights, lighter towards the bottom, with a faint glow.
+              drop-shadow, not text-shadow: the fill is a background clipped to the text. */}
+          <h1 className="mx-0 -mt-[1.1em] mb-0 bg-[linear-gradient(to_bottom,#dcb06a_0%,#e5c48d_45%,#efe2c9_100%)] bg-clip-text text-[clamp(2.6rem,9vw,6.5rem)] font-black uppercase leading-[0.92] tracking-[-0.03em] text-transparent [filter:drop-shadow(0_0_6px_rgb(230_186_112/0.35))]">
             World
             <br />
             Investment
