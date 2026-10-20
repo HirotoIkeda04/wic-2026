@@ -28,7 +28,9 @@ public/images/  the images the WIC pages use, copied from jpsi-web
 
 The landing page is being redesigned here first (plain scrolling sections, with
 a rolling $10,000 in the prize heading and a Three.js globe of the WIC2025 universities), to be carried back to jpsi-web.
-`scripts/land-dots.mjs` regenerates the globe's land dots (`src/wic/landing/land-dots.json`).
+`scripts/land-dots.mjs` regenerates the globe's land dots (`src/wic/landing/land-dots.json`);
+`scripts/images.mjs` regenerates the derived images (the photo helix's 900px WebP textures and the favicon).
+The poster WebPs and 480px logos in `public/images/wic/2026` are the files jpsi-web serves (branch wic/image-weight).
 
 ## Develop
 

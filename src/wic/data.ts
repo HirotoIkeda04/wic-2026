@@ -146,15 +146,22 @@ export const SCHEDULE: { before: ScheduleRow[]; months: ScheduleMonth[]; after: 
 /** Image paths under public/. */
 const IMG = "/images/wic/2026";
 export const WIC_IMAGES = {
-  /** Poster photo; the same one the WIC2025 page used as its hero. */
+  /** Poster photo; the same one the WIC2025 page used as its hero. The JPEG is
+   *  the OG image and the fallback for browsers without WebP. */
   hero: { src: "/images/hero-background.jpg", width: 2560, height: 1702 },
+  /** WebP copies of the poster photo at several widths, for `srcset`, so a
+   *  phone is not sent the 2560px file. Generated from hero.src at quality 84
+   *  (the same files as on jpsi-web). */
+  posterSrcSet: [800, 1280, 1920, 2560].map((w) => `${IMG}/poster-${w}.webp ${w}w`).join(", "),
   /** WIC2025 awards ceremony, shown on the Past editions page. */
   ceremony2025: `${IMG}/hero.jpg`,
+  /** 480px wide palette PNGs; the largest they are shown is about 110 CSS px.
+   *  width/height give the aspect ratio so the browser can reserve the box. */
   logos: {
-    ibkr: `${IMG}/logo-ibkr.png`,
-    tradingview: `${IMG}/logo-tradingview.png`,
-    webull: `${IMG}/logo-webull.png`,
-    okayasu: `${IMG}/logo-okayasu.png`,
-    nsj: `${IMG}/logo-nsj.png`,
+    ibkr: { src: `${IMG}/logo-ibkr.png`, width: 480, height: 78 },
+    tradingview: { src: `${IMG}/logo-tradingview.png`, width: 480, height: 63 },
+    webull: { src: `${IMG}/logo-webull.png`, width: 480, height: 90 },
+    okayasu: { src: `${IMG}/logo-okayasu.png`, width: 480, height: 94 },
+    nsj: { src: `${IMG}/logo-nsj.png`, width: 480, height: 117 },
   },
 };

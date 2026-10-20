@@ -3,12 +3,13 @@ import { SITE, WIC_IMAGES } from "../data";
 import { pick, type WicLang } from "../lang";
 import { EntryStatus } from "./EntryStatus";
 
-const sponsors = [
-  { src: WIC_IMAGES.logos.ibkr, alt: "Interactive Brokers", w: 6.2, y: "-0.16em" },
-  { src: WIC_IMAGES.logos.tradingview, alt: "TradingView", w: 5.3, y: "0.055em" },
-  { src: WIC_IMAGES.logos.webull, alt: "Webull Securities", w: 3.74 },
-  { src: WIC_IMAGES.logos.okayasu, alt: "Okayasu Shoji Co., Ltd.", w: 5.0 },
-  { src: WIC_IMAGES.logos.nsj, alt: "Nihon Securities Journal", w: 4.2 },
+/** `w` is the display width in em; `y` nudges the baseline. */
+const sponsors: { src: string; width: number; height: number; alt: string; w: number; y?: string }[] = [
+  { ...WIC_IMAGES.logos.ibkr, alt: "Interactive Brokers", w: 6.2, y: "-0.16em" },
+  { ...WIC_IMAGES.logos.tradingview, alt: "TradingView", w: 5.3, y: "0.055em" },
+  { ...WIC_IMAGES.logos.webull, alt: "Webull Securities", w: 3.74 },
+  { ...WIC_IMAGES.logos.okayasu, alt: "Okayasu Shoji Co., Ltd.", w: 5.0 },
+  { ...WIC_IMAGES.logos.nsj, alt: "Nihon Securities Journal", w: 4.2 },
 ];
 
 /**
@@ -40,15 +41,20 @@ export function Hero({ lang }: { lang: WicLang }) {
             crop around the stage; tablets show it at its natural height;
             desktops crop it to the space left, centred on the people. */}
         <div className="relative aspect-[1/1.05] overflow-hidden sm:aspect-auto lg:min-h-0 lg:flex-1">
-          <img
-            src={WIC_IMAGES.hero.src}
-            width={WIC_IMAGES.hero.width}
-            height={WIC_IMAGES.hero.height}
-            alt={pick(lang, "WIC awards ceremony: winners, judges and organizers on stage, with teams joining online on screen", "WICの表彰式。壇上に受賞者・審査員・運営、スクリーンにオンライン参加のチーム")}
-            loading="eager"
-            fetchPriority="high"
-            className="block size-full object-cover object-[58%_0%] sm:h-auto lg:h-full lg:object-[50%_60%]"
-          />
+          {/* The page's LCP element. Browsers that know WebP pick the smallest
+              width that still covers the viewport; others take the JPEG. */}
+          <picture className="contents">
+            <source type="image/webp" srcSet={WIC_IMAGES.posterSrcSet} sizes="100vw" />
+            <img
+              src={WIC_IMAGES.hero.src}
+              width={WIC_IMAGES.hero.width}
+              height={WIC_IMAGES.hero.height}
+              alt={pick(lang, "WIC awards ceremony: winners, judges and organizers on stage, with teams joining online on screen", "WICの表彰式。壇上に受賞者・審査員・運営、スクリーンにオンライン参加のチーム")}
+              loading="eager"
+              fetchPriority="high"
+              className="block size-full object-cover object-[58%_0%] sm:h-auto lg:h-full lg:object-[50%_60%]"
+            />
+          </picture>
           <div aria-hidden="true" className="absolute inset-0" style={{ background: PHOTO_FADE }} />
           {/* Grain over the photo, as on the JPSI site's poster (.wic-poster::after at rest) */}
           <div aria-hidden="true" className="absolute inset-0 opacity-[0.22] mix-blend-overlay [background-image:var(--wic-noise)] [background-size:220px]" />
@@ -93,6 +99,8 @@ export function Hero({ lang }: { lang: WicLang }) {
                 <li key={s.alt} className="min-w-0">
                   <img
                     src={s.src}
+                    width={s.width}
+                    height={s.height}
                     alt={s.alt}
                     className="block h-auto w-[calc(var(--w)*0.92em)] max-w-full translate-y-(--y)"
                     style={{ "--w": s.w, "--y": s.y ?? "0" } as CSSProperties}

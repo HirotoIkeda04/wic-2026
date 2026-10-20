@@ -8,15 +8,18 @@ import { PhotoVortex } from "./PhotoVortex";
  * the same eight photos repeat around the helix.
  */
 
+/** 900px WebP copies of the photos (scripts/images.mjs makes them from the
+ *  originals): they are WebGL textures a few hundred pixels across, and every
+ *  browser that runs WebGL also decodes WebP. */
 const PHOTOS = [
-  "/images/wic/wic2025-closing-ceremony.jpg",
-  "/images/wic/wic2025-champions-lmu.jpg",
-  "/images/wic/team-dressed-up.jpg",
-  "/images/hero-background.jpg",
-  "/images/wic/wic2025-trader-award-tum.jpg",
-  "/images/wic/wic2025-sponsor-interactive-brokers.jpg",
-  "/images/wic/wic2025-sponsor-nsj.jpg",
-  "/images/wic/wic2025-trader-award-comment.jpg",
+  "/images/wic/wic2025-closing-ceremony-900.webp",
+  "/images/wic/wic2025-champions-lmu-900.webp",
+  "/images/wic/team-dressed-up-900.webp",
+  "/images/hero-background-900.webp",
+  "/images/wic/wic2025-trader-award-tum-900.webp",
+  "/images/wic/wic2025-sponsor-interactive-brokers-900.webp",
+  "/images/wic/wic2025-sponsor-nsj-900.webp",
+  "/images/wic/wic2025-trader-award-comment-900.webp",
 ];
 
 export function Statement({ lang }: { lang: WicLang }) {
