@@ -27,11 +27,11 @@ const ICONS = {
 
 type Who = "both" | "trader" | "agent";
 
-/** Division colours: red for traders, blue for agents, purple (the two mixed) for both. */
+/** Division colours: red for traders, purple for agents, grey for both. */
 const TONE: Record<Who, { fill: string; text: string }> = {
   trader: { fill: "bg-[#c4484f]", text: "text-[#e2878b]" },
-  agent: { fill: "bg-[#3d6bd1]", text: "text-[#86a6ec]" },
-  both: { fill: "bg-[#7656c2]", text: "text-[#ac95e4]" },
+  agent: { fill: "bg-[#7656c2]", text: "text-[#ac95e4]" },
+  both: { fill: "bg-[#5a5a5a]", text: "text-[#b4b4b4]" },
 };
 
 /** A day at noon UTC, for counting days between dates. */
@@ -91,55 +91,85 @@ export function ScheduleSection({ lang }: { lang: WicLang }) {
     return lang === "ja" ? `${a.m}月${a.d}日〜${b.m}月${b.d}日` : `${a.mon} ${a.d} – ${b.mon} ${b.d}`;
   };
 
-  let lastYear = "";
+  // Dates shown down the middle, in order; the year only where it changes
+  const shownDates = [...new Set([...items.filter((it) => it.who === "both").map((it) => it.start), ...Object.values(phases)])].sort();
+  const yearShown = new Set(shownDates.filter((iso, i) => i === 0 || shownDates[i - 1].slice(0, 4) !== iso.slice(0, 4)));
+  const DateMark = ({ iso }: { iso: string }) => (
+    <p className="m-0 pt-1.5 text-center">
+      <span className="block whitespace-nowrap text-[0.9rem] font-semibold leading-tight tabular-nums sm:text-[1.05rem]">{fmt(iso)}</span>
+      {yearShown.has(iso) && <span className="block text-[0.75rem] text-wic-muted tabular-nums">{iso.slice(0, 4)}</span>}
+    </p>
+  );
+  const Capsule = ({ it }: { it: Item }) => (
+    <span
+      className={`flex w-8 flex-none items-center justify-center rounded-full text-[#f2f2f2] sm:w-11 ${TONE[it.who].fill} ${
+        it.end ? "self-stretch" : "h-8 sm:h-11"
+      }`}
+    >
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="sm:size-5">
+        {ICONS[it.icon]}
+      </svg>
+    </span>
+  );
+  const when = (it: Item) => (it.end ? range(it.start, it.end) : fmt(it.start));
+  const titleCls = "m-0 text-[0.92rem] font-semibold leading-[1.3] sm:text-[1.1rem]";
+  const subCls = "m-0 mt-0.5 text-[0.72rem] text-wic-muted tabular-nums sm:text-[0.85rem]";
+
   return (
     <Section id="schedule" title={pick(lang, "From entry to the awards in Tokyo.", "エントリーから東京での表彰式まで。")}>
-      <div className="grid max-w-[48rem] grid-cols-[3.5rem_minmax(0,1fr)_minmax(0,1fr)] gap-x-2.5 gap-y-2.5 sm:grid-cols-[5rem_minmax(0,1fr)_minmax(0,1fr)] sm:gap-x-5">
-        {/* Lane headers */}
-        {(["trader", "agent"] as const).map((w, k) => (
-          <p key={w} className="m-0 flex items-center gap-2 pb-2 text-[0.8rem] font-medium text-wic-muted sm:text-[0.88rem]" style={{ gridColumn: k + 2, gridRow: 1 }}>
-            <span aria-hidden="true" className={`size-2.5 flex-none rounded-full ${TONE[w].fill}`} />
-            {whoLabel[w]}
-          </p>
-        ))}
+      {/* Trader lane | dates | AI Agent lane. Capsules sit against the middle column. */}
+      <div className="mx-auto grid max-w-[48rem] grid-cols-[minmax(0,1fr)_4rem_minmax(0,1fr)] gap-x-2 gap-y-2.5 sm:grid-cols-[minmax(0,1fr)_6rem_minmax(0,1fr)] sm:gap-x-4">
+        <p className="m-0 flex items-center justify-end gap-2 pb-2 text-[0.78rem] font-medium text-wic-muted sm:text-[0.88rem]" style={{ gridColumn: 1, gridRow: 1 }}>
+          {whoLabel.trader}
+          <span aria-hidden="true" className={`size-2.5 flex-none rounded-full ${TONE.trader.fill}`} />
+        </p>
+        <p className="m-0 flex items-center gap-2 pb-2 text-[0.78rem] font-medium text-wic-muted sm:text-[0.88rem]" style={{ gridColumn: 3, gridRow: 1 }}>
+          <span aria-hidden="true" className={`size-2.5 flex-none rounded-full ${TONE.agent.fill}`} />
+          {whoLabel.agent}
+        </p>
 
-        {/* Phase start dates, with the year where it changes */}
-        {Object.entries(phases).map(([row, iso]) => {
-          const year = iso.slice(0, 4);
-          const showYear = year !== lastYear;
-          lastYear = year;
-          return (
-            <p key={row} className="m-0 pt-1.5 text-right" style={{ gridColumn: 1, gridRow: Number(row) + 1 }}>
-              <span className="block whitespace-nowrap text-[0.9rem] font-semibold leading-tight tabular-nums sm:text-[1.05rem]">{fmt(iso)}</span>
-              {showYear && <span className="block text-[0.75rem] text-wic-muted tabular-nums">{year}</span>}
-            </p>
-          );
-        })}
+        {/* Start dates of the phases where the lanes run separately */}
+        {Object.entries(phases)
+          .filter(([row]) => !items.some((it) => it.who === "both" && it.row === Number(row)))
+          .map(([row, iso]) => (
+            <div key={row} style={{ gridColumn: 2, gridRow: Number(row) + 1 }}>
+              <DateMark iso={iso} />
+            </div>
+          ))}
 
         {items.map((it, i) => {
-          const tone = TONE[it.who];
-          const col = it.who === "both" ? "2 / 4" : it.who === "trader" ? "2" : "3";
+          const area = { gridRow: `${it.row + 1} / span ${it.span ?? 1}` };
+          if (it.who === "both") {
+            // Across the whole width: title on the trader side, date in the middle,
+            // "both divisions" and the dates on the agent side
+            return (
+              <div key={i} className={`col-span-3 grid grid-cols-subgrid ${it.minH ?? ""}`} style={{ gridColumn: "1 / 4", ...area }}>
+                <div className="flex min-w-0 flex-row-reverse gap-2 sm:gap-3.5">
+                  <Capsule it={it} />
+                  <div className="min-w-0 pt-1 text-right"><p className={titleCls}>{it.title}</p></div>
+                </div>
+                <DateMark iso={it.start} />
+                <div className="flex min-w-0 gap-2 sm:gap-3.5">
+                  <Capsule it={it} />
+                  <div className="min-w-0 pt-1">
+                    <p className={`m-0 text-[0.72rem] font-medium sm:text-[0.82rem] ${TONE.both.text}`}>{whoLabel.both}</p>
+                    <p className={subCls}>{when(it)}</p>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+          const trader = it.who === "trader";
           return (
             <div
               key={i}
-              className={`flex min-w-0 gap-2.5 sm:gap-3.5 ${it.minH ?? ""}`}
-              style={{ gridColumn: col, gridRow: `${it.row + 1} / span ${it.span ?? 1}` }}
+              className={`flex min-w-0 gap-2 sm:gap-3.5 ${trader ? "flex-row-reverse" : ""} ${it.minH ?? ""}`}
+              style={{ gridColumn: trader ? 1 : 3, ...area }}
             >
-              <span
-                className={`flex w-9 flex-none justify-center rounded-full pt-2 text-[#f2f2f2] sm:w-11 sm:pt-2.5 ${tone.fill} ${
-                  it.end ? "self-stretch" : "h-9 sm:h-11"
-                }`}
-              >
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  {ICONS[it.icon]}
-                </svg>
-              </span>
-              <div className="min-w-0 pt-1">
-                {it.who === "both" && <p className={`m-0 text-[0.75rem] font-medium sm:text-[0.82rem] ${tone.text}`}>{whoLabel.both}</p>}
-                <p className="m-0 text-[0.95rem] font-semibold leading-[1.3] sm:text-[1.1rem]">{it.title}</p>
-                <p className="m-0 mt-0.5 text-[0.75rem] text-wic-muted tabular-nums sm:text-[0.85rem]">
-                  {it.end ? range(it.start, it.end) : fmt(it.start)}
-                </p>
+              <Capsule it={it} />
+              <div className={`min-w-0 pt-1 ${trader ? "text-right" : ""}`}>
+                <p className={titleCls}>{it.title}</p>
+                <p className={subCls}>{when(it)}</p>
               </div>
             </div>
           );
