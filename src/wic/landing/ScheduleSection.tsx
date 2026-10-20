@@ -98,18 +98,22 @@ type Item = {
   /** ISO dates; `end` makes it a period, drawn as a capsule rather than a dot */
   start: string;
   end?: string;
-  /** Grid rows it occupies (1-based, after the lane headers) and its minimum height */
-  row: number;
-  span?: number;
-  minH?: string;
 };
 
 /**
  * Key dates in two lanes, one per division, so their overlapping periods sit
- * side by side; items for both divisions take one capsule in the middle. Time runs down in
- * phases (one grid row each), with each phase's start date on the left.
- * Events are dots, periods are capsules; colours mark the division.
+ * side by side; items for both divisions take one capsule in the middle. Time runs
+ * down to scale: the grid has one row per day, so a capsule is as long as its period
+ * (at least as long as it is wide). Every other month is shaded. Events are dots,
+ * periods are capsules; colours mark the division.
  */
+const FIRST = "2026-10-15";
+/** Grid row (1-based) of a date: one row per day from FIRST. */
+const rowOf = (iso: string) => Math.round((day(iso) - day(FIRST)) / 864e5) + 1;
+/** Shortest capsule, in days: a little taller than it is wide at the day heights below, so it still reads as a capsule. */
+const MIN_DAYS = 18;
+/** Shaded months: every other one from November. */
+const BANDS: [string, string][] = [["2026-11-01", "2026-12-01"], ["2027-01-01", "2027-02-01"], ["2027-03-01", "2027-04-01"]];
 /**
  * The lines between capsules, measured from the rendered capsules
  * ([data-lane]). Each lane runs straight down; where a shared item meets the lanes,
@@ -182,16 +186,26 @@ function useRails(grid: React.RefObject<HTMLDivElement | null>) {
 
 export function ScheduleSection({ lang }: { lang: WicLang }) {
   const items: Item[] = [
-    { who: "both", icon: "entry", start: "2026-10-15", end: "2026-11-15", row: 1, minH: "min-h-[6.5rem]", title: pick(lang, "Entries open", "エントリー受付") },
-    { who: "both", icon: "opening", start: "2026-12-07", row: 2, title: pick(lang, "Opening ceremony (online)", "開会式（オンライン）") },
-    { who: "trader", icon: "test", start: "2026-12-07", end: "2026-12-20", row: 3, minH: "min-h-[7rem]", title: pick(lang, "Test trading", "テスト取引") },
-    { who: "agent", icon: "build", start: "2026-12-07", end: "2026-12-31", row: 3, minH: "min-h-[7rem]", title: pick(lang, "Build your agent", "エージェント開発") },
-    { who: "trader", icon: "trade", start: "2027-01-04", end: "2027-03-25", row: 4, span: 2, title: pick(lang, "Live trading", "本番取引") },
-    { who: "agent", icon: "trial", start: "2027-01-04", end: "2027-01-31", row: 4, minH: "min-h-[7rem]", title: pick(lang, "Trial run", "試運転") },
-    { who: "agent", icon: "agent", start: "2027-02-01", end: "2027-03-25", row: 5, minH: "min-h-[10rem]", title: pick(lang, "Live trading", "本番取引") },
-    { who: "both", icon: "report", start: "2027-03-26", end: "2027-03-31", row: 6, minH: "min-h-[4.5rem]", title: pick(lang, "Final reports", "最終レポート提出") },
-    { who: "both", icon: "awards", start: "2027-04-22", row: 7, title: pick(lang, "Closing and awards ceremony, Tokyo", "閉会式・表彰式（東京）") },
+    { who: "both", icon: "entry", start: "2026-10-15", end: "2026-11-15", title: pick(lang, "Entries open", "エントリー受付") },
+    { who: "both", icon: "opening", start: "2026-12-07", title: pick(lang, "Opening ceremony (online)", "開会式（オンライン）") },
+    { who: "trader", icon: "test", start: "2026-12-07", end: "2026-12-20", title: pick(lang, "Test trading", "テスト取引") },
+    { who: "agent", icon: "build", start: "2026-12-07", end: "2026-12-31", title: pick(lang, "Build your agent", "エージェント開発") },
+    { who: "trader", icon: "trade", start: "2027-01-04", end: "2027-03-25", title: pick(lang, "Live trading", "本番取引") },
+    { who: "agent", icon: "trial", start: "2027-01-04", end: "2027-01-31", title: pick(lang, "Trial run", "試運転") },
+    { who: "agent", icon: "agent", start: "2027-02-01", end: "2027-03-25", title: pick(lang, "Live trading", "本番取引") },
+    { who: "both", icon: "report", start: "2027-03-26", end: "2027-03-31", title: pick(lang, "Final reports", "最終レポート提出") },
+    { who: "both", icon: "awards", start: "2027-04-22", title: pick(lang, "Closing and awards ceremony, Tokyo", "閉会式・表彰式（東京）") },
   ];
+  const last = items[items.length - 1];
+  /** Rows an item takes. A period runs from its first day through its last (at least MIN_DAYS);
+      a one-day event sits just above its day, so lanes starting that day begin under it,
+      except the last, which is centred on its day. */
+  const rowsOf = (it: Item) => {
+    const r = rowOf(it.start);
+    if (it.end) return `${r} / ${Math.max(rowOf(it.end) + 1, r + MIN_DAYS)}`;
+    return it === last ? `${r - 7} / ${r + 7}` : `${r - 18} / ${r}`;
+  };
+  const ROWS = rowOf(last.start) + 7;
 
   const whoLabel: Record<Who, string> = {
     both: pick(lang, "Both divisions", "両部門"),
@@ -250,42 +264,47 @@ export function ScheduleSection({ lang }: { lang: WicLang }) {
           column, so a shared capsule there is centred between the lanes. The middle
           column is narrower than a capsule: shared capsules spill over its edges,
           which is fine as they never share a row with a lane capsule. */}
-      <div ref={gridRef} className="relative mx-auto grid max-w-[48rem] grid-cols-[minmax(0,1fr)_1.25rem_minmax(0,1fr)] gap-x-1 gap-y-2.5 sm:grid-cols-[minmax(0,1fr)_2rem_minmax(0,1fr)] sm:gap-x-2">
+      <div className="mx-auto grid max-w-[48rem] grid-cols-[minmax(0,1fr)_1.25rem_minmax(0,1fr)] gap-x-1 pb-3 sm:grid-cols-[minmax(0,1fr)_2rem_minmax(0,1fr)] sm:gap-x-2">
+        <p className="m-0 flex items-center justify-end gap-2 pr-1 text-[0.78rem] font-medium text-wic-muted sm:text-[0.88rem]">
+          <span aria-hidden="true" className={`size-2.5 flex-none rounded-full ${TONE.trader.fill}`} />
+          {whoLabel.trader}
+        </p>
+        <span />
+        <p className="m-0 flex items-center gap-2 pl-5 text-[0.78rem] font-medium text-wic-muted sm:text-[0.88rem]">
+          <span aria-hidden="true" className={`size-2.5 flex-none rounded-full ${TONE.agent.fill}`} />
+          {whoLabel.agent}
+        </p>
+      </div>
+      <div
+        ref={gridRef}
+        className="relative mx-auto grid max-w-[48rem] grid-cols-[minmax(0,1fr)_1.25rem_minmax(0,1fr)] gap-x-1 [--day:3.4px] sm:grid-cols-[minmax(0,1fr)_2rem_minmax(0,1fr)] sm:gap-x-2 sm:[--day:3.9px]"
+        style={{ gridTemplateRows: `repeat(${ROWS}, var(--day))` }}
+      >
+        {/* Every other month shaded, across the full width (no month names) */}
+        {BANDS.map(([a, b]) => (
+          <div key={a} aria-hidden="true" className="-mx-5 bg-wic-ink/[0.04] sm:-mx-8" style={{ gridColumn: "1 / 4", gridRow: `${rowOf(a)} / ${rowOf(b)}` }} />
+        ))}
         <svg aria-hidden="true" className="pointer-events-none absolute inset-0 size-full overflow-visible">
-          <defs>
-            {rails.map((r, i) => (
-              <linearGradient key={i} id={`rail-${i}`} gradientUnits="userSpaceOnUse" x1={r.x1} y1={r.y1} x2={r.x2} y2={r.y2}>
-                {oklchSteps(r.from, r.to).map((c, k, all) => (
-                  <stop key={k} offset={r.blend[0] + (r.blend[1] - r.blend[0]) * (k / (all.length - 1))} stopColor={c} />
-                ))}
-              </linearGradient>
-            ))}
-          </defs>
           {rails.map((r, i) => (
             <path key={i} d={r.d} fill="none" stroke="rgb(242 242 242 / 0.2)" strokeWidth="1.5" strokeLinejoin="round" />
           ))}
         </svg>
-        <p className="m-0 flex items-center justify-end gap-2 pb-2 pr-1 text-[0.78rem] font-medium text-wic-muted sm:text-[0.88rem]" style={{ gridColumn: 1, gridRow: 1 }}>
-          <span aria-hidden="true" className={`size-2.5 flex-none rounded-full ${TONE.trader.fill}`} />
-          {whoLabel.trader}
-        </p>
-        <p className="m-0 flex items-center gap-2 pb-2 pl-5 text-[0.78rem] font-medium text-wic-muted sm:text-[0.88rem]" style={{ gridColumn: 3, gridRow: 1 }}>
-          <span aria-hidden="true" className={`size-2.5 flex-none rounded-full ${TONE.agent.fill}`} />
-          {whoLabel.agent}
-        </p>
 
         {items.map((it, i) => {
-          const area = { gridRow: `${it.row + 1} / span ${it.span ?? 1}` };
+          const area = { gridRow: rowsOf(it) };
+          // Periods keep a little space above and below, so neighbouring capsules don't touch
+          const pad = it.end ? "py-[3px]" : it === last ? "" : "pb-5";
           if (it.who === "both") {
             // One capsule in the middle column, what it is on the right
             return (
-              <div key={i} className={`col-span-3 grid grid-cols-subgrid ${it.minH ?? ""}`} style={{ gridColumn: "1 / 4", ...area }}>
+              <div key={i} className={`col-span-3 grid grid-cols-subgrid ${pad}`} style={{ gridColumn: "1 / 4", ...area }}>
                 <div />
-                <div className="flex items-center justify-center">
+                <div className={`flex justify-center ${it.end ? "" : it === last ? "items-center" : "items-end"}`}>
                   <Capsule it={it} />
                 </div>
-                {/* Clear the shared capsule where it spills past the narrow middle column */}
-                <div className="min-w-0 self-center pl-4 sm:pl-2.5">
+                {/* Clear the shared capsule where it spills past the narrow middle column. An event
+                    above the lanes keeps its label's foot level with the dot, clear of the lanes. */}
+                <div className={`min-w-0 pl-4 sm:pl-2.5 ${it.end || it === last ? "self-center" : "self-end"}`}>
                   <p className={titleCls}>{it.title}</p>
                   <p className={subCls}>{when(it)}</p>
                 </div>
@@ -296,7 +315,7 @@ export function ScheduleSection({ lang }: { lang: WicLang }) {
           return (
             <div
               key={i}
-              className={`flex min-w-0 gap-2 sm:gap-3.5 ${trader ? "flex-row-reverse" : ""} ${it.minH ?? ""}`}
+              className={`flex min-w-0 gap-2 sm:gap-3.5 ${trader ? "flex-row-reverse" : ""} ${pad}`}
               style={{ gridColumn: trader ? 1 : 3, ...area }}
             >
               <Capsule it={it} />
