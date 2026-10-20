@@ -32,11 +32,14 @@ const stripLabel = "self-stretch flex items-center border-r border-black/20 pr-5
 /** First screen: photo, title, the deadline, and a strip with last year's sponsor logos, the organizer and the co-host. */
 export function Hero({ lang }: { lang: WicLang }) {
   return (
-    <section className="flex flex-col" aria-label="World Investment Competition 2026">
-      <div className="bg-[#0c0b0b]">
+    // From lg up the whole hero, sponsor strip included, fills exactly one
+    // screen: the photo takes whatever height the title and strip leave.
+    <section className="flex flex-col lg:h-svh" aria-label="World Investment Competition 2026">
+      <div className="bg-[#0c0b0b] lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
         {/* The photo starts at the top, under the header. Phones get a taller
-            crop around the stage; wider screens show it at its natural height. */}
-        <div className="relative aspect-[1/1.05] overflow-hidden sm:aspect-auto">
+            crop around the stage; tablets show it at its natural height;
+            desktops crop it to the space left, centred on the people. */}
+        <div className="relative aspect-[1/1.05] overflow-hidden sm:aspect-auto lg:min-h-0 lg:flex-1">
           <img
             src={WIC_IMAGES.hero.src}
             width={WIC_IMAGES.hero.width}
@@ -44,7 +47,7 @@ export function Hero({ lang }: { lang: WicLang }) {
             alt={pick(lang, "WIC awards ceremony: winners, judges and organizers on stage, with teams joining online on screen", "WICの表彰式。壇上に受賞者・審査員・運営、スクリーンにオンライン参加のチーム")}
             loading="eager"
             fetchPriority="high"
-            className="block size-full object-cover object-[58%_0%] sm:h-auto"
+            className="block size-full object-cover object-[58%_0%] sm:h-auto lg:h-full lg:object-[50%_60%]"
           />
           <div aria-hidden="true" className="absolute inset-0" style={{ background: PHOTO_FADE }} />
           {/* Grain over the photo, as on the JPSI site's poster (.wic-poster::after at rest) */}
@@ -74,12 +77,14 @@ export function Hero({ lang }: { lang: WicLang }) {
       {/* 2026 sponsors are not confirmed yet; these are last year's. */}
       <div className="bg-[#f6f5f2] px-5 pb-5 pt-6 text-[#1d1b1b] sm:px-8 sm:pt-8">
         {/* Two rows, each a label on the left and its content to the right. The
-            sponsor logos sit in equal cells: 3 + 2 on phones, one row of 5 from sm up. */}
-        <dl className="mx-auto my-0 grid max-w-[72rem] grid-cols-[auto_1fr] items-center gap-x-5 gap-y-4 sm:gap-x-8 sm:text-[1.2rem]">
+            sponsor logos sit in equal cells: 3 + 2 on phones, one row of 5 on small
+            tablets, 3 + 2 again at md (so the larger logos have room), one row from lg.
+            Logo widths are in em, so the dl's font size scales them: larger from md up. */}
+        <dl className="mx-auto my-0 grid max-w-[72rem] grid-cols-[auto_1fr] items-center gap-x-5 gap-y-4 sm:gap-x-8 sm:text-[1.2rem] md:text-[1.5rem] lg:text-[1.75rem]">
           <dt className={stripLabel}>{pick(lang, "Sponsors", "協賛")}</dt>
           <dd className="m-0 min-w-0">
             <ul
-              className="m-0 grid list-none grid-cols-3 items-center justify-items-center gap-x-4 gap-y-4 p-0 sm:grid-cols-5 sm:gap-x-8"
+              className="m-0 grid list-none grid-cols-3 items-center justify-items-center gap-x-4 gap-y-4 p-0 sm:grid-cols-5 sm:gap-x-8 md:grid-cols-3 md:gap-y-6 lg:grid-cols-5"
               aria-label={pick(lang, "WIC2025 Sponsors", "WIC2025 協賛企業")}
             >
               {sponsors.map((s) => (
