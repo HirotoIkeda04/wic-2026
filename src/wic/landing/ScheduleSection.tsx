@@ -265,9 +265,9 @@ export function ScheduleSection({ lang }: { lang: WicLang }) {
             <path key={i} d={r.d} fill="none" stroke="rgb(242 242 242 / 0.2)" strokeWidth="1.5" strokeLinejoin="round" />
           ))}
         </svg>
-        <p className="m-0 flex items-center justify-end gap-2 pb-2 pr-5 text-[0.78rem] font-medium text-wic-muted sm:text-[0.88rem]" style={{ gridColumn: 1, gridRow: 1 }}>
-          {whoLabel.trader}
+        <p className="m-0 flex items-center justify-end gap-2 pb-2 pr-1 text-[0.78rem] font-medium text-wic-muted sm:text-[0.88rem]" style={{ gridColumn: 1, gridRow: 1 }}>
           <span aria-hidden="true" className={`size-2.5 flex-none rounded-full ${TONE.trader.fill}`} />
+          {whoLabel.trader}
         </p>
         <p className="m-0 flex items-center gap-2 pb-2 pl-5 text-[0.78rem] font-medium text-wic-muted sm:text-[0.88rem]" style={{ gridColumn: 3, gridRow: 1 }}>
           <span aria-hidden="true" className={`size-2.5 flex-none rounded-full ${TONE.agent.fill}`} />
