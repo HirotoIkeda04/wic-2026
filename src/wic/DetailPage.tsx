@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { Pager } from "./Pager";
 import { WicFooter } from "./WicFooter";
 import { WicHeader } from "./WicHeader";
@@ -24,13 +24,14 @@ export function DetailPage({
   lead,
   children,
 }: DetailMeta & { slug: WicSlug; lang: WicLang; children: ReactNode }) {
-  const articleRef = useRef<HTMLDivElement>(null);
   const [toc, setToc] = useState<TocItem[]>([]);
-
-  useEffect(() => {
-    // Give every h2 an id so it can be linked to, then list them
+  // As the article mounts: give every h2 an id so it can be linked to, then
+  // list them. A ref callback rather than an effect, so the list is set in the
+  // same commit and no second pass is needed.
+  const articleRef = useCallback((el: HTMLDivElement | null) => {
+    if (!el) return;
     const items: TocItem[] = [];
-    articleRef.current!.querySelectorAll("h2").forEach((h, i) => {
+    el.querySelectorAll("h2").forEach((h, i) => {
       if (!h.id) h.id = `s${i + 1}`;
       items.push({ id: h.id, text: h.textContent ?? "" });
     });

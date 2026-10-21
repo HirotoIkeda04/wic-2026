@@ -6,8 +6,9 @@
 import sharp from "sharp";
 import { mkdir } from "node:fs/promises";
 import { basename, dirname, extname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const PUBLIC = new URL("../public", import.meta.url).pathname;
+const PUBLIC = fileURLToPath(new URL("../public", import.meta.url)); // fileURLToPath: the path may contain spaces
 
 /** Photos shown in the helix (Statement.tsx), as paths under public/. */
 const HELIX = [

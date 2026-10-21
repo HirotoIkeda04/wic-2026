@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { wicHref } from "../data";
 import { pick, type WicLang } from "../lang";
 import { MoreLink, Section } from "./Section";
@@ -104,6 +104,21 @@ function oklchSteps(a: string, b: string, n = 8): string[] {
 
 /** A day at noon UTC, for counting days between dates. */
 const day = (iso: string) => Date.parse(`${iso}T12:00:00Z`);
+
+/**
+ * Today, read in the browser so the page built ahead of time doesn't fix it
+ * (useSyncExternalStore: null on the server and while hydrating, then the
+ * date). ?today=YYYY-MM-DD previews the schedule as of another date.
+ */
+const noSubscribe = () => () => {};
+let todayCache: number | null = null;
+function todayInBrowser(): number {
+  if (todayCache === null) {
+    const preview = new URLSearchParams(location.search).get("today");
+    todayCache = preview && /^\d{4}-\d{2}-\d{2}$/.test(preview) ? day(preview) : Date.now();
+  }
+  return todayCache;
+}
 
 type Item = {
   who: Who;
@@ -314,13 +329,7 @@ export function ScheduleSection({ lang }: { lang: WicLang }) {
   const titleCls = "m-0 text-[0.92rem] font-semibold leading-[1.3] sm:text-[1.1rem]";
   const subCls = `m-0 mt-0.5 ${DATE_CLS}`;
 
-  // Today, read after mount so the page built ahead of time doesn't fix it.
-  // ?today=YYYY-MM-DD previews the schedule as of another date.
-  const [today, setToday] = useState<number | null>(null);
-  useEffect(() => {
-    const preview = new URLSearchParams(location.search).get("today");
-    setToday(preview && /^\d{4}-\d{2}-\d{2}$/.test(preview) ? day(preview) : Date.now());
-  }, []);
+  const today = useSyncExternalStore(noSubscribe, todayInBrowser, () => null);
 
   const gridRef = useRef<HTMLDivElement>(null);
   const rails = useRails(gridRef, today);
