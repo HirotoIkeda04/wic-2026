@@ -1,11 +1,45 @@
 ---
+// The landing page: a plain scrolling page, one section per topic. Each
+// interactive part is its own island, as in the JPSI site's WicLanding.astro.
 import Base from '../layouts/Base.astro';
-import { Landing } from '../wic/Landing';
+import { WicFooter } from '../wic/WicFooter';
+import { WicHeader } from '../wic/WicHeader';
+import { WicPage } from '../wic/WicPage';
+import { Divisions } from '../wic/landing/Divisions';
+import { EntrySection } from '../wic/landing/EntrySection';
+import { EntryStatus } from '../wic/landing/EntryStatus';
+import { Globe } from '../wic/landing/Globe';
+import { Hero } from '../wic/landing/Hero';
+import { LastYear, globeLabel } from '../wic/landing/LastYear';
+import { MarketBackdrop } from '../wic/landing/MarketBackdrop';
+import { PhotoVortex } from '../wic/landing/PhotoVortex';
+import { Prize } from '../wic/landing/Prize';
+import { RulesGlance } from '../wic/landing/RulesGlance';
+import { ScheduleSection } from '../wic/landing/ScheduleSection';
+import { SlotNumber } from '../wic/landing/SlotNumber';
+import { STATEMENT_PHOTOS, Statement } from '../wic/landing/Statement';
 import { landingHead } from '../wic/routes';
+import { slot } from '../wic/slot';
+
+const lang = 'en';
 ---
 
-<!-- The island is Landing itself, not WicLanding from routes.tsx: that module
-     also imports the five detail pages, which would end up in the landing's bundle. -->
-<Base {...landingHead('en')}>
-  <Landing lang="en" client:load />
+<Base {...landingHead(lang)}>
+  <WicPage tone="dark" lang={lang}>
+    <WicHeader client:load lang={lang} />
+    <main>
+      <Hero lang={lang} status={slot}><EntryStatus slot="status" client:load lang={lang} /></Hero>
+      <Statement lang={lang} vortex={slot}><PhotoVortex slot="vortex" client:load photos={STATEMENT_PHOTOS} /></Statement>
+      <Prize lang={lang} figure={slot}><SlotNumber slot="figure" client:load value="$10,000" /></Prize>
+      <LastYear lang={lang} globe={slot}><Globe slot="globe" client:load label={globeLabel(lang)} /></LastYear>
+      <Divisions lang={lang} chart={slot} ascii={slot}>
+        <MarketBackdrop slot="chart" client:load mode="chart" ink="255,255,255" />
+        <MarketBackdrop slot="ascii" client:load mode="ascii" ink="255,255,255" />
+      </Divisions>
+      <RulesGlance lang={lang} />
+      <ScheduleSection client:load lang={lang} />
+      <EntrySection lang={lang} status={slot}><EntryStatus slot="status" client:load lang={lang} /></EntrySection>
+    </main>
+    <WicFooter lang={lang} />
+  </WicPage>
 </Base>

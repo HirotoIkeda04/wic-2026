@@ -1,5 +1,3 @@
-"use client";
-
 import { useCallback, useState, type ReactNode } from "react";
 import { Pager } from "./Pager";
 import { WicFooter } from "./WicFooter";
@@ -43,7 +41,7 @@ export function DetailPage({
       <WicHeader lang={lang} current={slug} />
       <div className="wic-grain" aria-hidden="true" />
       <div className="relative z-10 mx-auto grid max-w-[64rem] gap-x-16 px-5 pb-20 pt-[calc(env(safe-area-inset-top,0px)+6.5rem)] lg:grid-cols-[minmax(0,42rem)_1fr]">
-        <main className="text-[17px] leading-[1.6]">
+        <main className="min-w-0 text-[17px] leading-[1.6]">
           <a
             href={wicHref(lang)}
             className="-ml-[0.2em] inline-flex min-h-11 items-center gap-[0.3em] text-[0.95rem] font-medium text-wic-ink no-underline hover:underline hover:underline-offset-[0.2em]"

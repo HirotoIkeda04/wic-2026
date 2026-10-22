@@ -1,6 +1,6 @@
+import type { ReactNode } from "react";
 import { wicHref, type WicSlug } from "../data";
 import { pick, type WicLang } from "../lang";
-import { MarketBackdrop } from "./MarketBackdrop";
 import { MoreLink, Section } from "./Section";
 
 /** `market`: how the card's band draws the shared price series (see MarketBackdrop). */
@@ -12,7 +12,9 @@ const TONE: Record<Card["market"], { band: string; pill: string }> = {
   ascii: { band: "bg-[#7656c2]", pill: "bg-[#f2f2f2] text-[#7656c2]" },
 };
 
-export function Divisions({ lang }: { lang: WicLang }) {
+/** `chart` and `ascii`: the MarketBackdrop islands of the two cards. */
+export function Divisions({ lang, chart, ascii }: { lang: WicLang; chart: ReactNode; ascii: ReactNode }) {
+  const backdrop = { chart, ascii };
   const cards: Card[] = [
     {
       slug: "trader",
@@ -55,7 +57,7 @@ export function Divisions({ lang }: { lang: WicLang }) {
                 {c.note && <span className={`whitespace-nowrap rounded-full px-3 py-1 text-[0.75rem] font-semibold ${TONE[c.market].pill}`}>{pick(lang, "New", "新設")}</span>}
               </div>
               <div className="relative h-40 sm:h-48">
-                <MarketBackdrop mode={c.market} ink="255,255,255" />
+                {backdrop[c.market]}
               </div>
             </div>
             <div className="flex flex-1 flex-col px-7 pb-7 pt-3 sm:px-9 sm:pb-9 sm:pt-4">

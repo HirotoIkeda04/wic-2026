@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import { pick, type WicLang } from "../lang";
 

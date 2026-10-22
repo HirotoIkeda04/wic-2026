@@ -16,12 +16,11 @@ This repository is a portfolio mirror served at <https://wic.ihiro.page>; the of
 ```
 src/
   wic/          WIC page components (React + Tailwind, no Astro or Next APIs)
-    Landing.tsx   the landing page; its sections live in landing/
-    landing/      Hero, Prize (SlotNumber), LastYear (Globe), Divisions, RulesGlance, ScheduleSection
+    landing/      the landing sections (Hero, Statement, Prize, LastYear, Divisions, RulesGlance, ScheduleSection, EntrySection); each takes its interactive parts as props
     DetailPage.tsx, pages/   the five detail pages (bodies copied from jpsi-web)
-    routes.tsx  mirror-only: page trees and head copy without Next's metadata API
+    routes.ts   mirror-only: head copy without the JPSI site's metadata helpers
     data.ts     JPSI_URL, contact address and root-level wicHref are mirror edits
-  pages/        index.astro and [page].astro (one route per NAV slug)
+  pages/        index.astro and [page].astro compose the pages from src/wic, one island per interactive part
   layouts/      Base.astro (document head; canonical points to jpsi-association.com/wic)
 public/images/  the images the WIC pages use, copied from jpsi-web
 ```

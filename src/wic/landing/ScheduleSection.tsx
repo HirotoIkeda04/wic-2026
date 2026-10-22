@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { wicHref } from "../data";
 import { pick, type WicLang } from "../lang";

@@ -1,8 +1,9 @@
+import type { ReactNode } from "react";
 import { pick, type WicLang } from "../lang";
 import { Section } from "./Section";
-import { SlotNumber } from "./SlotNumber";
 
-export function Prize({ lang }: { lang: WicLang }) {
+/** `figure`: the SlotNumber island that rolls the prize total. */
+export function Prize({ lang, figure }: { lang: WicLang; figure: ReactNode }) {
   const prizes = [
     {
       who: pick(lang, "Trader division, 1st place", "トレーダー部門 1位"),
@@ -17,7 +18,6 @@ export function Prize({ lang }: { lang: WicLang }) {
       what: pick(lang, "Subscriptions such as ChatGPT Pro or Claude Max for up to 12 months, for every member", "メンバー全員に ChatGPT Pro や Claude Max などのサブスクリプションを最大12か月分"),
     },
   ];
-  const figure = <SlotNumber value="$10,000" />;
   return (
     <Section
       id="prize"

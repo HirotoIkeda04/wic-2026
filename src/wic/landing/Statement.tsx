@@ -1,6 +1,6 @@
+import type { ReactNode } from "react";
 import { SITE } from "../data";
 import { pick, type WicLang } from "../lang";
-import { PhotoVortex } from "./PhotoVortex";
 
 /**
  * The one-sentence description of the competition, in the middle of the
@@ -11,7 +11,7 @@ import { PhotoVortex } from "./PhotoVortex";
 /** 900px WebP copies of the photos (scripts/images.mjs makes them from the
  *  originals): they are WebGL textures a few hundred pixels across, and every
  *  browser that runs WebGL also decodes WebP. */
-const PHOTOS = [
+export const STATEMENT_PHOTOS = [
   "/images/wic/wic2025-closing-ceremony-900.webp",
   "/images/wic/wic2025-champions-lmu-900.webp",
   "/images/wic/team-dressed-up-900.webp",
@@ -22,10 +22,11 @@ const PHOTOS = [
   "/images/wic/wic2025-trader-award-comment-900.webp",
 ];
 
-export function Statement({ lang }: { lang: WicLang }) {
+/** `vortex`: the PhotoVortex island, given STATEMENT_PHOTOS. */
+export function Statement({ lang, vortex }: { lang: WicLang; vortex: ReactNode }) {
   return (
     <section className="relative isolate overflow-clip bg-[#0c0b0b]" aria-label={pick(lang, "About the competition", "大会について")}>
-      <PhotoVortex photos={PHOTOS} />
+      {vortex}
 
       {/* Darken behind the sentences (set a little above the middle) so they read over the photos */}
       <div

@@ -1,9 +1,13 @@
+import type { ReactNode } from "react";
 import { wicHref } from "../data";
 import { pick, type WicLang } from "../lang";
-import { Globe } from "./Globe";
 import { MoreLink, Section } from "./Section";
 
-export function LastYear({ lang }: { lang: WicLang }) {
+export const globeLabel = (lang: WicLang) =>
+  pick(lang, "Globe marking the universities that took part in WIC2025", "WIC2025 に参加した大学を示す地球儀");
+
+/** `globe`: the Globe island, given `globeLabel(lang)`. */
+export function LastYear({ lang, globe }: { lang: WicLang; globe: ReactNode }) {
   return (
     <Section
       id="last-year"
@@ -14,7 +18,7 @@ export function LastYear({ lang }: { lang: WicLang }) {
       <div className="grid gap-x-10 lg:grid-cols-[1fr_1.3fr] lg:grid-rows-[1fr_auto_1fr]">
         {/* The square box leaves empty space above and below the sphere; on phones pull it in */}
         <div className="-mt-6 mb-2 lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:my-0 lg:self-center">
-          <Globe label={pick(lang, "Globe marking the universities that took part in WIC2025", "WIC2025 に参加した大学を示す地球儀")} />
+          {globe}
         </div>
         <div className="lg:col-start-1 lg:row-start-2">
           <p className="m-0 text-[1.05rem] leading-[1.7]">

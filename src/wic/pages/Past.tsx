@@ -1,8 +1,8 @@
+import type { ReactNode } from "react";
 import type { DetailMeta } from "../DetailPage";
-import { JPSI_URL, WIC_IMAGES, type Localized } from "../data";
+import { WIC_IMAGES, type Localized } from "../data";
 import { pick, type WicLang } from "../lang";
 import { WIC2025_VOICES } from "../voices2025";
-import { Wic2025Judges } from "../Wic2025Judges";
 
 export const meta: Localized<DetailMeta> = {
   en: {
@@ -67,6 +67,14 @@ const RESULTS_2025: { award: Localized; winner: string; result: Localized; prize
   },
 ];
 
+const SPONSORS_2025: { logo: { src: string; width: number; height: number }; name: string; href: string }[] = [
+  { logo: WIC_IMAGES.logos.ibkr, name: "Interactive Brokers", href: "https://www.interactivebrokers.com/" },
+  { logo: WIC_IMAGES.logos.tradingview, name: "TradingView", href: "https://www.tradingview.com/" },
+  { logo: WIC_IMAGES.logos.webull, name: "Webull Securities", href: "https://www.webull.co.jp/" },
+  { logo: WIC_IMAGES.logos.okayasu, name: "Okayasu Shoji Co., Ltd.", href: "https://www.okayasu-shoji.co.jp/" },
+  { logo: WIC_IMAGES.logos.nsj, name: "Nihon Securities Journal", href: "https://www.nsjournal.jp/" },
+];
+
 const UNIVERSITIES_2025: { name: string; country: Localized }[] = [
   { name: "Ludwig Maximilian University of Munich — LMU Investment Club", country: { en: "Germany", ja: "ドイツ" } },
   { name: "Technical University of Munich — TU Investment Club", country: { en: "Germany", ja: "ドイツ" } },
@@ -87,7 +95,8 @@ const UNIVERSITIES_2025: { name: string; country: Localized }[] = [
 ];
 
 /** Body of the Past editions page; rendered inside <DetailPage>. */
-export default function Past({ lang }: { lang: WicLang }) {
+/** `judges`: the Wic2025Judges island. */
+export default function Past({ lang, judges }: { lang: WicLang; judges: ReactNode }) {
   return (
     <>
 <figure className="my-6 mb-8">
@@ -103,6 +112,17 @@ export default function Past({ lang }: { lang: WicLang }) {
     "2025年12月15日から2026年3月13日までの3か月間、9か国16大学が競い、2,913回の取引と23本のレポートの提出があった。",
   )}
 </p>
+<h3>{pick(lang, "Sponsors", "協賛企業")}</h3>
+<ul className="my-6 grid list-none grid-cols-2 items-center gap-x-6 gap-y-6 p-0 sm:grid-cols-3">
+  {SPONSORS_2025.map((sponsor) => (
+    <li key={sponsor.href} className="m-0">
+      <a href={sponsor.href} target="_blank" rel="noopener noreferrer" className="flex h-12 items-center">
+        <img src={sponsor.logo.src} width={sponsor.logo.width} height={sponsor.logo.height} alt={sponsor.name} className="block h-auto max-h-full w-auto max-w-[10rem]" />
+      </a>
+    </li>
+  ))}
+</ul>
+
 <h3>{pick(lang, "Results and prizes", "結果と賞品")}</h3>
 <div className="tbl-wrap"><table>
 <thead><tr><th>{pick(lang, "Award", "賞")}</th><th>{pick(lang, "Winner", "受賞")}</th><th>{pick(lang, "Result", "成績")}</th><th>{pick(lang, "Prize", "賞品")}</th></tr></thead>
@@ -116,7 +136,7 @@ export default function Past({ lang }: { lang: WicLang }) {
     </tr>
   ))}
 </tbody></table></div>
-<p><a href={`${JPSI_URL}/live`}>{pick(lang, "Full results and rankings", "最終ランキングと全結果")}</a></p>
+<p><a href="/live">{pick(lang, "Full results and rankings", "最終ランキングと全結果")}</a></p>
 
 <div className="my-6 grid gap-4 sm:grid-cols-2">
   <figure className="m-0">
@@ -137,7 +157,7 @@ export default function Past({ lang }: { lang: WicLang }) {
 
 <h3 id="judges">{pick(lang, "Judges", "審査員")}</h3>
 <p>{pick(lang, "Two seasoned market professionals scored every investment report submitted in WIC2025.", "経験豊富な2名の実務家が、WIC2025 に提出されたすべての投資レポートを採点しました。")}</p>
-<Wic2025Judges lang={lang} />
+{judges}
 
 <h3>{pick(lang, "Participating universities", "参加大学")}</h3>
 <ul>

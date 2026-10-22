@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import { ContactIcons } from "./ContactIcons";
 import { JPSI_URL, NAV, WASEDA_AI_URL, SITE, wicHref, type WicSlug } from "./data";
@@ -18,7 +16,6 @@ export function WicHeader({ lang, current }: { lang: WicLang; current?: WicSlug 
         <a
           href={wicHref(lang)}
           className="inline-flex items-center gap-[0.45rem] leading-none text-wic-ink no-underline"
-          aria-label={SITE.shortName}
           data-brand
         >
           <span className="text-[2.05rem] font-black leading-[0.8] tracking-[-0.045em]">WIC</span>

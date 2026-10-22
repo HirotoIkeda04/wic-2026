@@ -1,5 +1,3 @@
-"use client";
-
 import { useId, useState } from "react";
 import { SIC_2026_SPEAKERS } from "./sic-speakers";
 import { pick, type WicLang } from "./lang";

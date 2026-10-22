@@ -1,15 +1,25 @@
 ---
+// A text page: the DetailPage island (it builds the table of contents in the
+// browser) around the page body, as in the JPSI site's WicDetail.astro.
 import Base from '../layouts/Base.astro';
+import { DetailPage } from '../wic/DetailPage';
+import { Wic2025Judges } from '../wic/Wic2025Judges';
 import type { WicSlug } from '../wic/data';
-import { detailHead, WIC_SLUGS, WicDetail } from '../wic/routes';
+import { DETAIL_PAGES } from '../wic/pages';
+import { detailHead, WIC_SLUGS } from '../wic/routes';
+import { slot } from '../wic/slot';
 
 export function getStaticPaths() {
   return WIC_SLUGS.map((page) => ({ params: { page } }));
 }
 
+const lang = 'en';
 const page = Astro.params.page as WicSlug;
+const { meta, Body } = DETAIL_PAGES[page];
 ---
 
-<Base {...detailHead('en', page)}>
-  <WicDetail lang="en" page={page} client:load />
+<Base {...detailHead(lang, page)}>
+  <DetailPage client:load slug={page} lang={lang} {...meta[lang]}>
+    <Body lang={lang} judges={slot}><Wic2025Judges slot="judges" client:load lang={lang} /></Body>
+  </DetailPage>
 </Base>

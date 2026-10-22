@@ -1,6 +1,6 @@
+import type { ReactNode } from "react";
 import { SITE } from "../data";
 import { pick, type WicLang } from "../lang";
-import { EntryStatus } from "./EntryStatus";
 import { Section } from "./Section";
 
 /**
@@ -8,11 +8,12 @@ import { Section } from "./Section";
  * heading, a centred block with the entry window, "WIC 2026" in the hero
  * title's gold (see Hero), who can enter, and the entry form.
  */
-export function EntrySection({ lang }: { lang: WicLang }) {
+/** `status`: the EntryStatus island, which works out the entry phase in the browser. */
+export function EntrySection({ lang, status }: { lang: WicLang; status: ReactNode }) {
   return (
     <Section id="entry" title={pick(lang, "Entry", "エントリー")}>
       <div className="flex flex-col items-center py-6 text-center sm:py-10">
-        <EntryStatus lang={lang} />
+        {status}
         {/* Same gold, light-from-above fill and faint glow as the hero title */}
         <p className="m-0 mt-5 bg-[linear-gradient(to_bottom,#dcb06a_0%,#e5c48d_45%,#efe2c9_100%)] bg-clip-text text-[clamp(3rem,11vw,6rem)] font-black uppercase leading-[0.92] tracking-[-0.03em] text-transparent [filter:drop-shadow(0_0_6px_rgb(230_186_112/0.35))]">
           WIC 2026
