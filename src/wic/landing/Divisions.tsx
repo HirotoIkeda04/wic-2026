@@ -51,8 +51,7 @@ export function Divisions({ lang, chart, ascii }: { lang: WicLang; chart: ReactN
         {cards.map((c) => (
           <article key={c.slug} className="flex flex-col overflow-hidden rounded-2xl border border-wic-line bg-wic-ink/[0.03]">
             {/* The division name over the same market, read as a chart (trader) or as characters (agent) */}
-            {/* Darker at the card's top edge, fading out by the middle of the band */}
-            <div className={`flex flex-col bg-[linear-gradient(to_bottom,rgb(0_0_0/0.1),rgb(0_0_0/0)_55%)] ${TONE[c.market].band}`}>
+            <div className={`flex flex-col ${TONE[c.market].band}`}>
               <div className="flex items-center justify-between gap-4 pl-5 pr-7 pt-6 sm:pl-7 sm:pr-9 sm:pt-8">
                 <h3 className="m-0 text-[1.6rem] font-semibold tracking-[-0.02em] text-[#f2f2f2]">{c.name}</h3>
                 {c.note && <span className={`whitespace-nowrap rounded-full px-3 py-1 text-[0.75rem] font-semibold ${TONE[c.market].pill}`}>{pick(lang, "New", "新設")}</span>}
