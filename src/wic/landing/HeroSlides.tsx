@@ -80,8 +80,9 @@ export function HeroSlides({ slides }: { slides: HeroSlide[] }) {
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_38%_at_28%_32%,rgb(12_11_11/var(--wic-sv)),rgb(12_11_11/0)_100%)] [transition:--wic-sv_1.6s_ease]"
       />
 
-      {/* Progress marks, centred just above the sponsor row (its cells are 32px × --k tall) */}
-      <div aria-hidden="true" className="absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+18px+32px*var(--k)+14px)] z-10 flex justify-center gap-1.5">
+      {/* Progress marks, centred just above the sponsor row (its cells are 32px × --k tall),
+          held back so they do not draw the eye */}
+      <div aria-hidden="true" className="absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+18px+32px*var(--k)+14px)] z-10 flex justify-center gap-1.5 opacity-40">
         {slides.map((s, i) => (
           <i
             key={i === at ? `${s.src}-${n}` : s.src}
