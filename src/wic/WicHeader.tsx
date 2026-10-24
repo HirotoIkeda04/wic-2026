@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ContactIcons } from "./ContactIcons";
 import { JPSI_URL, NAV, WASEDA_AI_URL, SITE, wicHref, type WicSlug } from "./data";
 import { pick, type WicLang } from "./lang";
@@ -33,6 +33,29 @@ export function WicHeader({ lang, current, hero = false }: { lang: WicLang; curr
     };
   }, [hero]);
 
+  // Entry changes width between the two looks through several properties at once
+  // (padding, type size, the date), which do not move in step: on their own the
+  // button would jump one way and then ease back the other. So its width is
+  // animated from where it is to where it will settle, measured on a copy
+  // without transitions, and only ever grows or only ever shrinks.
+  const entryRef = useRef<HTMLAnchorElement>(null);
+  const settled = useRef(false);
+  useLayoutEffect(() => {
+    const el = entryRef.current;
+    if (!el || !settled.current) {
+      settled.current = true;
+      return;
+    }
+    const from = el.getBoundingClientRect().width;
+    const copy = el.cloneNode(true) as HTMLElement;
+    copy.style.cssText = "position:absolute;visibility:hidden;transition:none";
+    copy.querySelectorAll<HTMLElement>("*").forEach((n) => (n.style.transition = "none"));
+    el.after(copy);
+    const to = copy.getBoundingClientRect().width;
+    copy.remove();
+    el.animate([{ width: `${from}px` }, { width: `${to}px` }], { duration: 350, easing: "cubic-bezier(0.4, 0, 0.2, 1)" });
+  }, [inHero]);
+
   const when = { before: pick(lang, "opens Oct 15", "10/15開始"), open: pick(lang, "by Nov 15", "11/15まで"), closed: null }[phase];
 
   return (
@@ -58,21 +81,29 @@ export function WicHeader({ lang, current, hero = false }: { lang: WicLang; curr
           </span>
         </a>
         <div className="flex items-center gap-[0.6rem] max-[559px]:gap-[0.45rem]">
+          {/* The date opens from nothing (a grid column from 0fr to 1fr) rather than popping
+              in; the button's own width is animated in the effect above */}
           <a
+            ref={entryRef}
             href={SITE.entryUrl}
-            className={`inline-flex h-9 items-center whitespace-nowrap rounded-full border text-[0.95rem] font-semibold no-underline transition-[background-color,color,border-color,padding] duration-350 ${
+            className={`inline-flex h-9 items-center overflow-hidden whitespace-nowrap rounded-full border text-[0.95rem] font-semibold no-underline transition-[background-color,color,border-color,padding,font-size] duration-350 ${
               inHero
-                ? "gap-[0.35em] border-wic-ink/45 bg-wic-bg/35 px-[18px] text-wic-ink backdrop-blur-[6px] max-[559px]:gap-[0.3em] max-[559px]:px-3 max-[559px]:text-[0.84rem]"
+                ? "border-wic-ink/45 bg-wic-bg/35 px-[18px] text-wic-ink backdrop-blur-[6px] max-[559px]:px-3 max-[559px]:text-[0.84rem]"
                 : "border-wic-ink bg-wic-ink px-6 text-wic-bg"
             }`}
           >
             {pick(lang, "Entry", "応募")}
             {/* Below 387px the brand and the dated button no longer fit side by side: the date gives way */}
-            {inHero && when && (
-              <>
-                {" "}
-                <span className="text-[0.76rem] font-light tracking-[0.01em] text-wic-ink/80 max-[559px]:text-[0.66rem] max-[386px]:hidden">{when}</span>
-              </>
+            {when && (
+              <span
+                aria-hidden={inHero ? undefined : true}
+                className={`grid transition-[grid-template-columns,opacity] duration-350 max-[386px]:hidden ${inHero ? "grid-cols-[1fr] opacity-100" : "grid-cols-[0fr] opacity-0"}`}
+              >
+                <span className="min-w-0 overflow-hidden pl-[0.35em] text-[0.76rem] font-light tracking-[0.01em] text-wic-ink/80 max-[559px]:pl-[0.3em] max-[559px]:text-[0.66rem]">
+                  {" "}
+                  {when}
+                </span>
+              </span>
             )}
           </a>
           <button
