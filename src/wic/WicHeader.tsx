@@ -50,7 +50,7 @@ export function WicHeader({ lang, current, hero = false }: { lang: WicLang; curr
     const copy = el.cloneNode(true) as HTMLElement;
     copy.style.cssText = "position:absolute;visibility:hidden;transition:none";
     copy.querySelectorAll<HTMLElement>("*").forEach((n) => (n.style.transition = "none"));
-    el.after(copy);
+    el.insertAdjacentElement("afterend", copy);
     const to = copy.getBoundingClientRect().width;
     copy.remove();
     el.animate([{ width: `${from}px` }, { width: `${to}px` }], { duration: 350, easing: "cubic-bezier(0.4, 0, 0.2, 1)" });
@@ -94,7 +94,7 @@ export function WicHeader({ lang, current, hero = false }: { lang: WicLang; curr
           >
             {pick(lang, "Entry", "応募")}
             {/* Below 387px the brand and the dated button no longer fit side by side: the date gives way */}
-            {when && (
+            {hero && when && (
               <span
                 aria-hidden={inHero ? undefined : true}
                 className={`grid transition-[grid-template-columns,opacity] duration-350 max-[386px]:hidden ${inHero ? "grid-cols-[1fr] opacity-100" : "grid-cols-[0fr] opacity-0"}`}
