@@ -68,8 +68,6 @@ export function Hero({ lang, slides }: { lang: WicLang; slides: ReactNode }) {
     >
       {slides}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ background: SHADE }} />
-      {/* Film grain (--wic-noise in wic.css) */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-10 [background-image:var(--wic-noise)] [background-size:180px]" />
 
       {/* The words, under the header's left edge. Their middle sits 96px above 35% of
           the screen's height, but never closer than 16px under the header (--top):
