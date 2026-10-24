@@ -7,8 +7,8 @@ import { useEffect, useRef } from "react";
  * those to the side and above or below fade into the dark.
  *
  * Fills its positioned parent. Three.js, the renderer and the photos are
- * fetched only once the section reaches the viewport, so the first screen
- * loads without them. Renders only while on screen; with reduced motion it
+ * fetched after the first screen has loaded (or once the section reaches the
+ * viewport, if that comes first). Renders only while on screen; with reduced motion it
  * draws one still frame.
  */
 
@@ -80,15 +80,31 @@ export function PhotoVortex({ photos }: { photos: string[] }) {
     let disposed = false;
     let cleanup = () => {};
 
-    // Start once the section has come a little way into the viewport: on phones
-    // its top edge already shows under the hero, so without the margin it would
-    // load with the first screen
-    const begin = new IntersectionObserver(([e]) => {
-      if (!e.isIntersecting) return;
+    // Start once the first screen has finished loading and the browser is idle,
+    // so the photos are in place before the section scrolls in; or earlier, if
+    // the section comes a little way into the viewport before then (on phones
+    // its top edge already shows under the hero, hence the margin)
+    let started = false;
+    let idle = 0;
+    const start = () => {
+      if (started) return;
+      started = true;
       begin.disconnect();
+      window.removeEventListener("load", onLoad);
+      cancelIdle(idle);
       setup();
+    };
+    const begin = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) start();
     }, { rootMargin: "0px 0px -15% 0px" });
     begin.observe(box);
+    const requestIdle = window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 200));
+    const cancelIdle = window.cancelIdleCallback ?? window.clearTimeout;
+    const onLoad = () => {
+      idle = requestIdle(start, { timeout: 2000 });
+    };
+    if (document.readyState === "complete") onLoad();
+    else window.addEventListener("load", onLoad, { once: true });
 
     async function setup() {
       const { Color, DoubleSide, Mesh, PerspectiveCamera, PlaneGeometry, SRGBColorSpace, Scene, ShaderMaterial, TextureLoader, WebGLRenderer } = await import("three");
@@ -222,6 +238,8 @@ export function PhotoVortex({ photos }: { photos: string[] }) {
     return () => {
       disposed = true;
       begin.disconnect();
+      window.removeEventListener("load", onLoad);
+      cancelIdle(idle);
       cleanup();
     };
   }, [photos]);
