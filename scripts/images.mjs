@@ -1,6 +1,6 @@
 // Derived images for the landing page, so the originals in public/ are not
-// sent at full size: 900px WebP copies of the photo helix's pictures and a
-// small favicon. Run `node scripts/images.mjs` after changing a source image.
+// sent at full size: 900px WebP copies of the photo helix's pictures, larger
+// copies of the hero's photos and a small favicon. Run `node scripts/images.mjs` after changing a source image.
 // The poster WebPs and the 480px logos in public/images/wic/2026 are copied
 // from jpsi-web (branch wic/image-weight), so both sites serve the same files.
 import sharp from "sharp";
@@ -31,6 +31,24 @@ for (const src of HELIX) {
     .webp({ quality: 84 })
     .toFile(join(PUBLIC, out));
   console.log(`${out}  ${info.width}x${info.height}  ${(info.size / 1024).toFixed(0)} KB`);
+}
+
+/** The hero's other photos (Hero.tsx; the first is the poster), at the widths
+ *  their srcset lists beside the 900px helix copy above. */
+const HERO = {
+  "/images/wic/wic2025-champions-lmu.jpg": [1400],
+  "/images/wic/wic2025-closing-ceremony.jpg": [1280, 1800],
+};
+
+for (const [src, widths] of Object.entries(HERO)) {
+  for (const width of widths) {
+    const out = join(dirname(src), `${basename(src, extname(src))}-${width}.webp`);
+    const info = await sharp(join(PUBLIC, src))
+      .resize({ width, withoutEnlargement: true })
+      .webp({ quality: 82 })
+      .toFile(join(PUBLIC, out));
+    console.log(`${out}  ${info.width}x${info.height}  ${(info.size / 1024).toFixed(0)} KB`);
+  }
 }
 
 // Favicon: the 1100px JPSI icon is 237 KB; browsers show it at 16–32px.

@@ -1,36 +1,79 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ContactIcons } from "./ContactIcons";
 import { JPSI_URL, NAV, WASEDA_AI_URL, SITE, wicHref, type WicSlug } from "./data";
 import { pick, type WicLang } from "./lang";
+import { phaseAt } from "./landing/EntryStatus";
 
 /**
  * Fixed header + full-screen menu overlay. Colors come from the tone tokens in
  * wic.css, so the same component sits on the dark landing page and the light
  * detail pages. `current` is the slug of the page being shown, if any.
+ *
+ * `hero`: on the landing page. Until the hero's title (#wic-hero-title) has gone
+ * under the header, the brand steps back, the header's fade is off, and Entry
+ * is an outlined button that carries the date; after it, the filled Entry.
  */
-export function WicHeader({ lang, current }: { lang: WicLang; current?: WicSlug }) {
+export function WicHeader({ lang, current, hero = false }: { lang: WicLang; current?: WicSlug; hero?: boolean }) {
   const [open, setOpen] = useState(false);
+  const [inHero, setInHero] = useState(hero);
+  const [phase] = useState(() => phaseAt(Date.now()));
+  const ref = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const title = document.getElementById("wic-hero-title");
+    const header = ref.current;
+    if (!hero || !title || !header) return;
+    const check = () => setInHero(title.getBoundingClientRect().bottom >= header.offsetHeight);
+    check();
+    addEventListener("scroll", check, { passive: true });
+    addEventListener("resize", check);
+    return () => {
+      removeEventListener("scroll", check);
+      removeEventListener("resize", check);
+    };
+  }, [hero]);
+
+  const when = { before: pick(lang, "opens Oct 15", "10/15開始"), open: pick(lang, "by Nov 15", "11/15まで"), closed: null }[phase];
+
   return (
     <>
-      <header className="wic-header pointer-events-none fixed inset-x-0 top-0 z-50 flex items-center justify-between px-[1.1rem] pb-[0.9rem] pt-[calc(env(safe-area-inset-top,0px)+0.9rem)] *:pointer-events-auto">
+      {/* A grid, not flex with space-between: the brand's column can shrink, so the
+          buttons always keep the right edge at their own width */}
+      <header
+        ref={ref}
+        data-in-hero={inHero ? "" : undefined}
+        className="wic-header pointer-events-none fixed inset-x-0 top-0 z-50 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 px-[1.1rem] pb-[0.9rem] pt-[calc(env(safe-area-inset-top,0px)+0.9rem)] *:pointer-events-auto max-[559px]:gap-x-1.5 lg:px-8"
+      >
         <a
           href={wicHref(lang)}
-          className="inline-flex items-center gap-[0.45rem] leading-none text-wic-ink no-underline"
+          className={`inline-flex min-w-0 items-center gap-[0.45rem] overflow-hidden leading-none text-wic-ink no-underline transition-opacity duration-350 ${inHero ? "opacity-80 hover:opacity-100 focus-visible:opacity-100" : ""}`}
           data-brand
         >
-          <span className="text-[2.05rem] font-black leading-[0.8] tracking-[-0.045em]">WIC</span>
-          <span className="text-[0.66rem] font-extrabold uppercase leading-[1.08] tracking-[0.01em]">
+          <span className="text-[2.05rem] font-black leading-[0.8] tracking-[-0.045em]">WIC</span>{" "}
+          {/* The spaces keep the words apart in the link's text ("WIC World Investment Competition 2026"):
+              one between flex items, one at the start of a line, neither takes room */}
+          <span className="whitespace-nowrap text-[0.68rem] font-bold uppercase leading-[1.1]">
             World Investment
-            <br />
-            Competition 2026
+            <br /> Competition 2026
           </span>
         </a>
-        <div className="flex items-center gap-[0.6rem]">
+        <div className="flex items-center gap-[0.6rem] max-[559px]:gap-[0.45rem]">
           <a
             href={SITE.entryUrl}
-            className="inline-flex h-9 items-center whitespace-nowrap rounded-full bg-wic-ink px-6 text-[0.95rem] font-semibold text-wic-bg no-underline"
+            className={`inline-flex h-9 items-center whitespace-nowrap rounded-full border text-[0.95rem] font-semibold no-underline transition-[background-color,color,border-color,padding] duration-350 ${
+              inHero
+                ? "gap-[0.35em] border-wic-ink/45 bg-wic-bg/35 px-[18px] text-wic-ink backdrop-blur-[6px] max-[559px]:gap-[0.3em] max-[559px]:px-3 max-[559px]:text-[0.84rem]"
+                : "border-wic-ink bg-wic-ink px-6 text-wic-bg"
+            }`}
           >
             {pick(lang, "Entry", "応募")}
+            {/* Below 387px the brand and the dated button no longer fit side by side: the date gives way */}
+            {inHero && when && (
+              <>
+                {" "}
+                <span className="text-[0.76rem] font-light tracking-[0.01em] text-wic-ink/80 max-[559px]:text-[0.66rem] max-[386px]:hidden">{when}</span>
+              </>
+            )}
           </a>
           <button
             type="button"

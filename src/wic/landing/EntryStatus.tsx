@@ -11,9 +11,10 @@ import { pick, type WicLang } from "../lang";
 const OPENS = Date.parse("2026-10-15T00:00:00-04:00");
 const CLOSES = Date.parse("2026-11-15T23:59:59-05:00");
 
-type Phase = "before" | "open" | "closed";
+export type Phase = "before" | "open" | "closed";
 
-function phaseAt(now: number): Phase {
+/** Also used by WicHeader, whose Entry button carries the date while the hero is on screen. */
+export function phaseAt(now: number): Phase {
   if (now < OPENS) return "before";
   return now <= CLOSES ? "open" : "closed";
 }

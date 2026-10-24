@@ -9,7 +9,8 @@ import { Divisions } from '../wic/landing/Divisions';
 import { EntrySection } from '../wic/landing/EntrySection';
 import { EntryStatus } from '../wic/landing/EntryStatus';
 import { Globe } from '../wic/landing/Globe';
-import { Hero } from '../wic/landing/Hero';
+import { Hero, heroSlides } from '../wic/landing/Hero';
+import { HeroSlides } from '../wic/landing/HeroSlides';
 import { LastYear, globeLabel } from '../wic/landing/LastYear';
 import { MarketBackdrop } from '../wic/landing/MarketBackdrop';
 import { PhotoVortex } from '../wic/landing/PhotoVortex';
@@ -26,9 +27,9 @@ const lang = 'en';
 
 <Base {...landingHead(lang)}>
   <WicPage tone="dark" lang={lang}>
-    <WicHeader client:load lang={lang} />
+    <WicHeader client:load lang={lang} hero />
     <main>
-      <Hero lang={lang} status={slot}><EntryStatus slot="status" client:load lang={lang} /></Hero>
+      <Hero lang={lang} slides={slot}><HeroSlides slot="slides" client:load slides={heroSlides(lang)} /></Hero>
       <Statement lang={lang} vortex={slot}><PhotoVortex slot="vortex" client:load photos={STATEMENT_PHOTOS} /></Statement>
       <Prize lang={lang} figure={slot}><SlotNumber slot="figure" client:load value="$10,000" /></Prize>
       <LastYear lang={lang} globe={slot}><Globe slot="globe" client:load label={globeLabel(lang)} /></LastYear>

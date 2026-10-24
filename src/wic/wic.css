@@ -53,7 +53,10 @@ html:has(.wic[data-tone="dark"]), body:has(.wic[data-tone="dark"]) { background:
     content: "";
     position: absolute; inset: 0 0 -1.5rem; z-index: -1; pointer-events: none;
     background: linear-gradient(to bottom, rgb(246 245 242 / 0.96), rgb(246 245 242 / 0));
+    transition: opacity 0.35s ease;
   }
+  /* On the landing page, not until the hero's title has gone under the header */
+  .wic-header[data-in-hero]::before { opacity: 0; }
   .wic[data-tone="dark"] .wic-header::before {
     background: linear-gradient(to bottom, rgb(20 20 20 / 0.96), rgb(20 20 20 / 0));
   }
@@ -88,3 +91,10 @@ html:has(.wic[data-tone="dark"]), body:has(.wic[data-tone="dark"]) { background:
     .formula { @apply font-mono text-[0.95rem] px-4 py-3 border border-wic-line rounded-lg overflow-x-auto; }
   }
 }
+
+/* The hero's photos (HeroSlides.tsx): a slow push-in while each is up, the
+   progress mark filling over the same interval, and the oval behind the words,
+   whose darkness is a registered number so it can ease between photos. */
+@property --wic-sv { syntax: "<number>"; inherits: true; initial-value: 0; }
+@keyframes wic-drift { from { transform: scale(1); } to { transform: scale(1.05); } }
+@keyframes wic-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }

@@ -153,6 +153,16 @@ export const WIC_IMAGES = {
    *  phone is not sent the 2560px file. Generated from hero.src at quality 84
    *  (the same files as on jpsi-web). */
   posterSrcSet: [800, 1280, 1920, 2560].map((w) => `${IMG}/poster-${w}.webp ${w}w`).join(", "),
+  /** The hero's other photos (after the poster): the JPEG as the fallback, and
+   *  WebP copies at the widths scripts/images.mjs makes for the srcset. */
+  champions2025: {
+    src: "/images/wic/wic2025-champions-lmu.jpg",
+    srcSet: [900, 1400].map((w) => `/images/wic/wic2025-champions-lmu-${w}.webp ${w}w`).join(", "),
+  },
+  closing2025: {
+    src: "/images/wic/wic2025-closing-ceremony.jpg",
+    srcSet: [900, 1280, 1800].map((w) => `/images/wic/wic2025-closing-ceremony-${w}.webp ${w}w`).join(", "),
+  },
   /** WIC2025 awards ceremony, shown on the Past editions page. */
   ceremony2025: `${IMG}/hero.jpg`,
   /** 480px wide palette PNGs; the largest they are shown is about 110 CSS px.
