@@ -62,6 +62,7 @@ export function Hero({ lang, slides }: { lang: WicLang; slides: ReactNode }) {
   return (
     // --k scales the sponsor logos and their cells: a step up from lg
     <section
+      data-tone="dark"
       className="relative isolate h-svh min-h-[620px] overflow-hidden bg-[#0c0b0b] [--k:1] lg:[--k:1.25]"
       aria-label="World Investment Competition 2026"
       aria-roledescription="carousel"

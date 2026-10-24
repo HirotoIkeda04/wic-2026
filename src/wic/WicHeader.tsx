@@ -6,8 +6,9 @@ import { phaseAt } from "./landing/EntryStatus";
 
 /**
  * Fixed header + full-screen menu overlay. Colors come from the tone tokens in
- * wic.css, so the same component sits on the dark landing page and the light
- * detail pages. `current` is the slug of the page being shown, if any.
+ * wic.css: the header takes the dark tone while a dark part of the page (a
+ * `data-tone="dark"` section, such as the landing's hero) is under it, unless
+ * the menu is open. `current` is the slug of the page being shown, if any.
  *
  * `hero`: on the landing page. Until the hero's title (#wic-hero-title) has gone
  * under the header, the brand steps back, the header's fade is off, and Entry
@@ -16,6 +17,7 @@ import { phaseAt } from "./landing/EntryStatus";
 export function WicHeader({ lang, current, hero = false }: { lang: WicLang; current?: WicSlug; hero?: boolean }) {
   const [open, setOpen] = useState(false);
   const [inHero, setInHero] = useState(hero);
+  const [overDark, setOverDark] = useState(hero);
   const [phase] = useState(() => phaseAt(Date.now()));
   const ref = useRef<HTMLElement>(null);
 
@@ -32,6 +34,27 @@ export function WicHeader({ lang, current, hero = false }: { lang: WicLang; curr
       removeEventListener("resize", check);
     };
   }, [hero]);
+
+  // Which tone is under the header's middle
+  useEffect(() => {
+    const header = ref.current;
+    const darks = [...document.querySelectorAll<HTMLElement>('main [data-tone="dark"]')];
+    if (!header || !darks.length) return;
+    const check = () => {
+      const y = header.offsetHeight / 2;
+      setOverDark(darks.some((s) => {
+        const r = s.getBoundingClientRect();
+        return r.top <= y && r.bottom > y;
+      }));
+    };
+    check();
+    addEventListener("scroll", check, { passive: true });
+    addEventListener("resize", check);
+    return () => {
+      removeEventListener("scroll", check);
+      removeEventListener("resize", check);
+    };
+  }, []);
 
   // Entry changes width between the two looks through several properties at once
   // (padding, type size, the date), which do not move in step: on their own the
@@ -65,6 +88,7 @@ export function WicHeader({ lang, current, hero = false }: { lang: WicLang; curr
       <header
         ref={ref}
         data-in-hero={inHero ? "" : undefined}
+        data-tone={overDark && !open ? "dark" : undefined}
         className="wic-header pointer-events-none fixed inset-x-0 top-0 z-50 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 px-[1.1rem] pb-[0.9rem] pt-[calc(env(safe-area-inset-top,0px)+0.9rem)] *:pointer-events-auto max-[559px]:gap-x-1.5 lg:px-8"
       >
         <a

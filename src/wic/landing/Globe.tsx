@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from "react";
 
 /**
  * Dotted globe (Three.js) in the manner of cloudflare.com, in black and white:
- * a dark sphere, land drawn as a grid of dots, a faint rim, and a marker for
- * each WIC2025 university with its name beside it (HTML, placed every frame).
- * It turns slowly and can be dragged. Three.js and the land dots are fetched
- * only as the section comes within a screen of the viewport. Without WebGL the
- * box stays empty apart from its label; with reduced motion it renders one
- * still frame.
+ * a sphere in the page's own paper, land drawn as a grid of dots, a faint rim,
+ * and a marker for each WIC2025 university with its name beside it (HTML,
+ * placed every frame). It turns slowly and can be dragged. Three.js and the
+ * land dots are fetched only as the section comes within a screen of the
+ * viewport. Without WebGL the box stays empty apart from its label; with
+ * reduced motion it renders one still frame.
  */
 
 type Site = {
@@ -38,7 +38,7 @@ const SITES: Site[] = [
 ];
 
 const R = 1;
-const INK = [0.95, 0.95, 0.95] as const;
+const INK = [0.114, 0.106, 0.106] as const; // --wic-ink, #1d1b1b
 
 function toXYZ(lat: number, lon: number, r = R): [number, number, number] {
   const phi = ((90 - lat) * Math.PI) / 180;
@@ -92,10 +92,10 @@ export function Globe({ label }: { label: string }) {
       const disposables: { dispose(): void }[] = [];
       const track = <T extends { dispose(): void }>(d: T) => (disposables.push(d), d);
 
-      // Dark body; hides the dots on the far side
+      // Body in the page's paper (--wic-bg); hides the dots on the far side
       globe.add(new Mesh(
         track(new SphereGeometry(R * 0.995, 96, 64)),
-        track(new MeshBasicMaterial({ color: 0x0e0e0e })),
+        track(new MeshBasicMaterial({ color: 0xf6f5f2 })),
       ));
 
       // Rim: a hairline on the silhouette, which sits in front of the centre
@@ -104,7 +104,7 @@ export function Globe({ label }: { label: string }) {
       const rs = R * Math.sqrt(1 - (R * R) / (d * d));
       const rim = new Mesh(
         track(new RingGeometry(rs, rs * 1.004, 256)),
-        track(new MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.22, depthWrite: false })),
+        track(new MeshBasicMaterial({ color: 0x1d1b1b, transparent: true, opacity: 0.22, depthWrite: false })),
       );
       rim.position.z = (R * R) / d;
       scene.add(rim);
@@ -158,7 +158,7 @@ export function Globe({ label }: { label: string }) {
             float ring = smoothstep(0.07, 0.0, abs(d - r)) * (1.0 - fract(uTime * 0.5));
             float a = max(core, ring * 0.8);
             if (a < 0.01) discard;
-            gl_FragColor = vec4(vec3(1.0), a);
+            gl_FragColor = vec4(vec3(0.114, 0.106, 0.106), a);
           }`,
       }));
       globe.add(new Points(markGeo, markMat));
@@ -270,14 +270,14 @@ export function Globe({ label }: { label: string }) {
       ref={boxRef}
       role="img"
       aria-label={label}
-      className={`relative mx-auto aspect-square w-full max-w-[40rem] cursor-grab bg-[radial-gradient(circle_at_50%_50%,rgb(255_255_255/0.07)_0%,rgb(255_255_255/0.025)_38%,transparent_62%)] transition-opacity duration-700 active:cursor-grabbing ${live ? "opacity-100" : "opacity-0"}`}
+      className={`relative mx-auto aspect-square w-full max-w-[40rem] cursor-grab bg-[radial-gradient(circle_at_50%_50%,rgb(29_27_27/0.05)_0%,rgb(29_27_27/0.02)_38%,transparent_62%)] transition-opacity duration-700 active:cursor-grabbing ${live ? "opacity-100" : "opacity-0"}`}
     >
       {SITES.map((s, i) => (
         <span
           key={s.names[0]}
           ref={(el) => { labelRefs.current[i] = el; }}
           aria-hidden="true"
-          className={`pointer-events-none absolute left-0 top-0 z-10 whitespace-nowrap text-[11px] leading-[1.35] text-[#f2f2f2]/85 opacity-0 [text-shadow:0_0_6px_#0e0e0e,0_0_2px_#0e0e0e] sm:text-[12px] ${s.side === "left" ? "text-right" : ""}`}
+          className={`pointer-events-none absolute left-0 top-0 z-10 whitespace-nowrap text-[11px] leading-[1.35] text-wic-ink/85 opacity-0 [text-shadow:0_0_6px_var(--wic-bg),0_0_2px_var(--wic-bg)] sm:text-[12px] ${s.side === "left" ? "text-right" : ""}`}
         >
           {s.names.map((n) => <span key={n} className="block">{n}</span>)}
         </span>

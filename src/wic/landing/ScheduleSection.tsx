@@ -34,16 +34,21 @@ const ICONS = {
 
 type Who = "both" | "trader" | "agent";
 
-/** Division colours: red for traders, purple for agents, red into purple for both. */
+/**
+ * Division colours: red for traders, purple for agents, red into purple for both.
+ * The fills are the division colours (#c4484f, #7656c2) a step lighter and softer
+ * in OKLCH (L +0.05, C ×0.9) for the light page; the icons on a capsule's grey keep
+ * the deeper originals.
+ */
 const TONE: Record<Who, { fill: string; text: string; hex: string; capsule: string }> = {
-  trader: { fill: "bg-[#c4484f]", text: "text-[#e2878b]", hex: "#c4484f", capsule: "text-[#e2878b]" },
-  agent: { fill: "bg-[#7656c2]", text: "text-[#ac95e4]", hex: "#7656c2", capsule: "text-[#ac95e4]" },
+  trader: { fill: "bg-[#cf5e62]", text: "text-[#c4484f]", hex: "#cf5e62", capsule: "text-[#c4484f]" },
+  agent: { fill: "bg-[#8369cb]", text: "text-[#7656c2]", hex: "#8369cb", capsule: "text-[#7656c2]" },
   // Both divisions: the OKLCH midpoint of the trader red and the agent purple.
   // (Trial; the gradient it replaces was
   // "bg-[linear-gradient(in_oklch_to_right,#c4484f_20%,#7656c2_80%)]".)
   // Capsules have no edge: grey until their dates, then filled with the colour (see FILL);
   // `capsule` is the icon colour.
-  both: { fill: "bg-[color-mix(in_oklch,#c4484f,#7656c2)]", text: "text-[#b4b4b4]", hex: "", capsule: "text-[#f2f2f2]" },
+  both: { fill: "bg-[color-mix(in_oklch,#cf5e62,#8369cb)]", text: "text-[#6b6763]", hex: "", capsule: "text-[#1d1b1b]" },
 };
 
 /*
@@ -147,9 +152,9 @@ const MONTHS: [string, string][] = [
   ["2027-02-01", "2027-03-01"], ["2027-03-01", "2027-04-01"], ["2027-04-01", "2027-04-30"],
 ];
 /** The colour a capsule fills with as its dates pass. */
-const FILL: Record<Who, string> = { trader: "#c4484f", agent: "#7656c2", both: "#d6d2cb" }; // hex: blended by oklchSteps
+const FILL: Record<Who, string> = { trader: "#cf5e62", agent: "#8369cb", both: "#4c4948" }; // hex: blended by oklchSteps
 /** A capsule's colour before its dates: a plain grey. */
-const PENDING = "#2c2b2a";
+const PENDING = "#e3e0db";
 /** The soft edge where a capsule's colour meets its grey at `f`%: OKLCH steps (see oklchSteps), 12% deep. */
 const edge = (c: string, f: number) =>
   oklchSteps(c, PENDING, 6).map((s, k, all) => `${s} ${Math.min(100, Math.max(0, f - 6 + (12 * k) / (all.length - 1))).toFixed(1)}%`).join(", ");
@@ -164,7 +169,7 @@ type Rail = { d: string; x1: number; y1: number; x2: number; y2: number; from: s
 /** A line's colour before its time: the same grey as a capsule before its dates. */
 const RAIL_PENDING = PENDING;
 /** Line colours at each kind of capsule: the division colours, and a grey for shared items. */
-const RAIL: Record<Who, string> = { trader: "#c4484f", agent: "#7656c2", both: "#8f8c88" };
+const RAIL: Record<Who, string> = { trader: "#cf5e62", agent: "#8369cb", both: "#8f8c88" };
 function useRails(grid: React.RefObject<HTMLDivElement | null>, today: number | null) {
   const [rails, setRails] = useState<Rail[]>([]);
   useEffect(() => {
@@ -287,8 +292,8 @@ export function ScheduleSection({ lang }: { lang: WicLang }) {
     const f = progress(it) * 100;
     const c = FILL[it.who];
     const fill = f >= 100 ? { backgroundColor: c } : { backgroundColor: PENDING, backgroundImage: f > 0 ? `linear-gradient(to bottom, ${c} 0%, ${edge(c, f)})` : undefined };
-    // Once the fill has passed the icon, the icon turns pale (dark on a shared item's light fill)
-    const iconOn = f >= 55 ? (it.who === "both" ? "!text-[#1d1b1b]" : "!text-white") : "";
+    // Once the fill has passed the icon, the icon turns white
+    const iconOn = f >= 55 ? "!text-white" : "";
     return (
     <span
       data-lane={it.who}
@@ -361,7 +366,7 @@ export function ScheduleSection({ lang }: { lang: WicLang }) {
           <div
             key={a}
             aria-hidden="true"
-            className={`-mx-5 sm:-mx-8 ${i ? "bg-[linear-gradient(to_right,rgb(242_242_242/0.16)_2px,transparent_2px)] bg-[length:9px_1px] bg-top bg-repeat-x" : ""}`}
+            className={`-mx-5 sm:-mx-8 ${i ? "bg-[linear-gradient(to_right,rgb(29_27_27/0.18)_2px,transparent_2px)] bg-[length:9px_1px] bg-top bg-repeat-x" : ""}`}
             style={{ gridColumn: "1 / 4", gridRow: `${rowOf(a)} / ${Math.min(rowOf(b), ROWS + 1)}` }}
           />
         ))}

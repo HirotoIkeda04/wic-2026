@@ -37,7 +37,7 @@ export function EntryStatus({ lang }: { lang: WicLang }) {
   }[phase];
 
   return (
-    <span className="inline-flex items-center rounded-full border border-[#f2f2f2]/40 px-4 py-1.5 font-semibold">
+    <span className="inline-flex items-center rounded-full border border-wic-ink/40 px-4 py-1.5 font-semibold">
       {label}
     </span>
   );

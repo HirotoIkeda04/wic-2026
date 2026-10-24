@@ -6,10 +6,11 @@ import { MoreLink, Section } from "./Section";
 /** `market`: how the card's band draws the shared price series (see MarketBackdrop). */
 type Card = { slug: WicSlug; market: "chart" | "ascii"; name: string; facts: [string, string][]; note?: string };
 
-/** The division colours of the schedule (red for traders, purple for agents) fill the chart band. */
+/** The division colours of the schedule (red for traders, purple for agents) fill the chart band,
+ *  in the schedule's lighter fills; the pill's small type keeps the deeper originals. */
 const TONE: Record<Card["market"], { band: string; pill: string }> = {
-  chart: { band: "bg-[#c4484f]", pill: "bg-[#f2f2f2] text-[#c4484f]" },
-  ascii: { band: "bg-[#7656c2]", pill: "bg-[#f2f2f2] text-[#7656c2]" },
+  chart: { band: "bg-[#cf5e62]", pill: "bg-[#f2f2f2] text-[#c4484f]" },
+  ascii: { band: "bg-[#8369cb]", pill: "bg-[#f2f2f2] text-[#7656c2]" },
 };
 
 /** `chart` and `ascii`: the MarketBackdrop islands of the two cards. */

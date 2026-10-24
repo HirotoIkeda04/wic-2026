@@ -25,7 +25,7 @@ export const STATEMENT_PHOTOS = [
 /** `vortex`: the PhotoVortex island, given STATEMENT_PHOTOS. */
 export function Statement({ lang, vortex }: { lang: WicLang; vortex: ReactNode }) {
   return (
-    <section className="relative isolate overflow-clip bg-[#0c0b0b]" aria-label={pick(lang, "About the competition", "大会について")}>
+    <section data-tone="dark" className="relative isolate overflow-clip bg-[#0c0b0b]" aria-label={pick(lang, "About the competition", "大会について")}>
       {vortex}
 
       {/* Darken behind the sentences (set a little above the middle) so they read over the photos */}

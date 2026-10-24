@@ -2,9 +2,10 @@
  * WIC 2026 styles, imported from app/globals.css so that the @theme tokens and
  * @apply rules below are processed by Tailwind.
  *
- * Pages are either "light" (detail pages) or "dark" (landing). The tone is set
- * with `data-tone` on the page wrapper (see WicPage) and every `wic-*` color
- * token follows it, so the same header serves both.
+ * Pages are "light". The tone is set with `data-tone` on the page wrapper (see
+ * WicPage) and every `wic-*` color token follows it; a part of the page can
+ * take the other tone with its own `data-tone` (the landing's hero and
+ * statement, and the header while it is over them).
  */
 
 @theme {
@@ -32,12 +33,14 @@
   background: var(--wic-bg);
   color: var(--wic-ink);
 }
-.wic[data-tone="dark"] {
+.wic[data-tone="dark"], .wic [data-tone="dark"] {
   --wic-bg: #141414;
   --wic-ink: #f2f2f2;
   --wic-muted: #9a9a9a;
   --wic-line: rgb(244 242 238 / 0.14);
 }
+/* `color` was resolved on .wic: a part with a tone of its own sets it again */
+.wic [data-tone] { color: var(--wic-ink); }
 /* Mobile Safari paints the strip under its collapsed toolbar, and overscroll,
    with the root background, which is the site's white: match the WIC tone. */
 html:has(.wic[data-tone="light"]), body:has(.wic[data-tone="light"]) { background: #f6f5f2; }
@@ -57,7 +60,7 @@ html:has(.wic[data-tone="dark"]), body:has(.wic[data-tone="dark"]) { background:
   }
   /* On the landing page, not until the hero's title has gone under the header */
   .wic-header[data-in-hero]::before { opacity: 0; }
-  .wic[data-tone="dark"] .wic-header::before {
+  .wic[data-tone="dark"] .wic-header::before, .wic-header[data-tone="dark"]::before {
     background: linear-gradient(to bottom, rgb(20 20 20 / 0.96), rgb(20 20 20 / 0));
   }
 

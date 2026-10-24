@@ -8,7 +8,7 @@ import { useEffect, useRef } from "react";
  * screen; with reduced motion they show the finished drawing.
  *
  * Fills its positioned parent and draws in `ink` ("r,g,b"); the default
- * assumes the dark landing page.
+ * suits a dark ground, such as the division cards' coloured bands.
  */
 
 const MONO = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
