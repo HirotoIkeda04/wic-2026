@@ -32,7 +32,7 @@ export function MoreLink({ href, children }: { href: string; children: ReactNode
   return (
     <a
       href={href}
-      className="inline-flex items-center gap-2 rounded-full border border-wic-ink/30 px-5 py-2.5 text-[0.9rem] font-medium text-wic-ink no-underline transition-colors hover:border-wic-ink hover:bg-wic-ink hover:text-wic-bg"
+      className="inline-flex items-center gap-2 rounded-full border border-wic-line px-5 py-2.5 text-[0.9rem] font-medium text-wic-ink no-underline transition-colors hover:border-wic-ink hover:bg-wic-ink hover:text-wic-bg"
     >
       {children} <span aria-hidden="true">→</span>
     </a>

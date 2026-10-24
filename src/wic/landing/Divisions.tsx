@@ -47,34 +47,37 @@ export function Divisions({ lang, chart, ascii }: { lang: WicLang; chart: ReactN
       title={pick(lang, "Divisions", "部門")}
       lead={pick(lang, "Trade yourself, or build an agent that trades.", "自分で取引するか、取引するエージェントをつくるか。")}
     >
-      <div className="grid gap-5 md:grid-cols-2">
+      {/* Each Read more sits close under its own card; stacked on phones, the cards keep a wider gap between them */}
+      <div className="grid gap-x-5 gap-y-14 md:grid-cols-2">
         {cards.map((c) => (
-          <article key={c.slug} className="flex flex-col overflow-hidden rounded-2xl border border-wic-line bg-wic-ink/[0.03]">
-            {/* The division name over the same market, read as a chart (trader) or as characters (agent) */}
-            <div className={`flex flex-col ${TONE[c.market].band}`}>
-              <div className="flex items-center justify-between gap-4 pl-5 pr-7 pt-6 sm:pl-7 sm:pr-9 sm:pt-8">
-                <h3 className="m-0 text-[1.6rem] font-semibold tracking-[-0.02em] text-[#f2f2f2]">{c.name}</h3>
-                {c.note && <span className={`whitespace-nowrap rounded-full px-3 py-1 text-[0.75rem] font-semibold ${TONE[c.market].pill}`}>{pick(lang, "New", "新設")}</span>}
+          <div key={c.slug} className="flex flex-col">
+            <article className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-wic-line bg-wic-bg">
+              {/* The division name over the same market, read as a chart (trader) or as characters (agent) */}
+              <div className={`flex flex-col ${TONE[c.market].band}`}>
+                <div className="flex items-center justify-between gap-4 pl-5 pr-7 pt-6 sm:pl-7 sm:pr-9 sm:pt-8">
+                  <h3 className="m-0 text-[1.6rem] font-semibold tracking-[-0.02em] text-[#f2f2f2]">{c.name}</h3>
+                  {c.note && <span className={`whitespace-nowrap rounded-full px-3 py-1 text-[0.75rem] font-semibold ${TONE[c.market].pill}`}>{pick(lang, "New", "新設")}</span>}
+                </div>
+                <div className="relative h-40 sm:h-48">
+                  {backdrop[c.market]}
+                </div>
               </div>
-              <div className="relative h-40 sm:h-48">
-                {backdrop[c.market]}
+              <div className="flex flex-1 flex-col px-7 pb-7 pt-3 sm:px-9 sm:pb-9 sm:pt-4">
+                <dl className="m-0 flex-1 divide-y divide-wic-line">
+                  {c.facts.map(([k, v]) => (
+                    <div key={k} className="grid grid-cols-[7rem_1fr] gap-4 py-3.5">
+                      <dt className="text-[0.88rem] text-wic-muted">{k}</dt>
+                      <dd className="m-0 text-[0.98rem] leading-[1.45]">{v}</dd>
+                    </div>
+                  ))}
+                </dl>
+                {c.note && <p className="mb-0 mt-5 text-[0.9rem] text-wic-muted">{c.note}</p>}
               </div>
+            </article>
+            <div className="mt-2 flex justify-end">
+              <MoreLink href={wicHref(lang, c.slug)}>{pick(lang, "Read more", "詳しく見る")}</MoreLink>
             </div>
-            <div className="flex flex-1 flex-col px-7 pb-7 pt-3 sm:px-9 sm:pb-9 sm:pt-4">
-              <dl className="m-0 flex-1 divide-y divide-wic-line">
-                {c.facts.map(([k, v]) => (
-                  <div key={k} className="grid grid-cols-[7rem_1fr] gap-4 py-3.5">
-                    <dt className="text-[0.88rem] text-wic-muted">{k}</dt>
-                    <dd className="m-0 text-[0.98rem] leading-[1.45]">{v}</dd>
-                  </div>
-                ))}
-              </dl>
-              {c.note && <p className="mb-0 mt-5 text-[0.9rem] text-wic-muted">{c.note}</p>}
-              <div className="mt-7 flex justify-end">
-                <MoreLink href={wicHref(lang, c.slug)}>{pick(lang, "Read more", "詳しく見る")}</MoreLink>
-              </div>
-            </div>
-          </article>
+          </div>
         ))}
       </div>
     </Section>
